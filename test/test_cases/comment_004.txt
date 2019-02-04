@@ -1,0 +1,6 @@
+Age: 58  Sex: M
+Comments:
+  Lead 0:
+    All ST change episodes appeared to be rate-related non-ischemic
+    episodes characterized by J-point depression and scooping of the
+    ST segment.

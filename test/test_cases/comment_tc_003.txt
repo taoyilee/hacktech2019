@@ -1,0 +1,41 @@
+Age: 81  Sex: F
+Comments:
+  Increases in heart rate lead to ischemic ST changes.
+  Patient has coronary artery disease and angina by history.
+  The ECG changes are best seen in lead 1 and lead 2. The
+  changes in lead 0 are of much smaller amplitude, and often
+  do not reach criteria for significance.
+Symptoms during Holter recording:  None reported.
+Diagnoses: 
+  Coronary artery disease
+  Labile hypertension
+  Palpitations
+Treatment:
+  Medications:
+    Atenolol
+    Vasotec
+  Balloon Angioplasty: No
+  Coronary Artery bypass Grafting: No
+History: 
+  Hypertension: Yes
+  Left ventricular hypertrophy: Mild
+  Cardiomyopathy: No
+  Valve disease: No
+  Electrolyte abnormalities: No
+  Hypercapnia, anemia, hypotension, hyperventilation: No
+  Atrioventricular nodal conduction delay: No
+  Intraventricular conduction block: No
+  Previous Myocardial Infarction: No
+  Previous tests:
+    ECG stress test: No
+    Thallium/Stress echo: No
+    Left ventricular function: 
+      Normal
+    Echocardiogram: 
+      Mild left ventricular hypertrophy, normal left ventricular function
+    Coronary Arteriography: No
+    Baseline ECG: 
+      Normal
+Holter Recording:
+  Date: 24/03/1999
+  Recorder: Zymed

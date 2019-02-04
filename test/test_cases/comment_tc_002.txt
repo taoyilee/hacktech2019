@@ -1,0 +1,45 @@
+Age: 59  Sex: M
+Comments:
+  Patient experienced mild angina during recording period.
+  The time is not available. Lead 0 is very noisy. The
+  data showed a few short ischemic episodes noted in
+  leads 1 and 2.
+Symptoms during Holter recording: Yes-angina 27/07/1999, time unknown
+Diagnoses: 
+  Coronary artery disease
+  Hyperlipidemia
+  Hypertension
+Treatment:
+  Medications:
+    Cardizem CD
+    Pravachol
+    Aspirin
+  Balloon Angioplasty: Yes, 1997 stenting of vein graft
+  Coronary Artery bypass Grafting: Yes, double bypass in 1987 following failed angioplasty
+History: 
+  Coronary artery disease
+  Hypertension: Yes
+  Left ventricular hypertrophy: No data
+  Cardiomyopathy: No data
+  Valve disease: No data
+  Electrolyte abnormalities: No data
+  Hypercapnia, anemia, hypotension, hyperventilation: No data
+  Atrioventricular nodal conduction delay: No data
+  Intraventricular conduction block: No data
+  Previous Myocardial Infarction: Inferior myocardial infarction 1986
+  Previous tests:
+    ECG stress test: Yes
+      Date: 1998 and 2000
+      Findings: Positive for infero-lateral ischemia in 1998; normal in 2000, with inadequate heart rate
+    Thallium/Stress echo: Positive in 1998 - ST depression in V5, V6; hypokinetic inferior wall.
+    Left ventricular function: 
+      Normal- ejection fraction 63%
+    Echocardiogram: 
+      Hypokinetic inferior wall.
+    Coronary Arteriography: 
+      Yes, 1997: ejection fraction 70%, graft occlusions found
+    Baseline ECG: 
+      Sinus bradycardia at 51 bpm, left atrial enlargement, minor T-wave abnormalities in lateral precordium.
+Holter Recording:
+  Date: 26/07/1999
+  Recorder: Zymed
