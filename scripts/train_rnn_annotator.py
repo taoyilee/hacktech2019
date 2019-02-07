@@ -1,30 +1,112 @@
-import numpy as np
-import glob
-import configparser as cp
-from shutil import copyfile
-import os
-import logging
-from core.dataset.qtdb import load_dat, split_dataset
-from core.models.rnn import get_model
-from core.util.experiments import setup_experiment
+#import numpy as np
+#import glob
+#import configparser as cp
+#from shutil import copyfile
+#import os
+#import logging
+#from core.dataset.qtdb import load_dat, split_dataset
+#from core.models.rnn import get_model
+#from core.util.experiments import setup_experiment
+#
+#from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 
-from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+import wfdb
+from os import listdir
+from os.path import isfile,join,splitext
 
-logger = logging.getLogger('main')
-logger.setLevel(logging.DEBUG)
-config = cp.ConfigParser()
-config.read("config.ini")
-try:
-    os.makedirs(config["logging"].get("logdir"))
-except FileExistsError:
-    pass
-fh = logging.FileHandler(os.path.join(config["logging"].get("logdir"), "main.log"), mode="w+")
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+#logger = logging.getLogger('main')
+#logger.setLevel(logging.DEBUG)
+#config = cp.ConfigParser()
+#config.read("config.ini")
+#try:
+#    os.makedirs(config["logging"].get("logdir"))
+#except FileExistsError:
+#    pass
+#fh = logging.FileHandler(os.path.join(config["logging"].get("logdir"), "main.log"), mode="w+")
+#fh.setLevel(logging.DEBUG)
+#formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#fh.setFormatter(formatter)
+#logger.addHandler(fh)
+
+"""
+class ECGMockSequence(Sequence):
+
+    def __init__(self, x_set, y_set, batch_size):
+        self.x, self.y = x_set, y_set
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        return np.random((32, 1024, 2)), np.random()
+"""
+
+class ECGDataset:
+  path = None
+  dataset = []
+  # currently, only takes directory path as input
+  def __init__(self, path):
+      if path != None:
+          files = [splitext(f)[0] for f in listdir(path) if isfile(join(path,f))]
+          files = list(set(files))
+          files.sort()
+
+          for f in files:
+              print (f)
+              try:
+                  self.dataset.append(wfdb.rdrecord(join(path,f)))
+              except FileNotFoundError:
+                  print(join(path,f) + " is not a record")
+
+          self.path = path
+
+  def __add__(self, object):
+      newECG = ECGDataset()
+      newECG.dataset = self.dataset + object.dataset
+      return newECG
+
+  def __getitem__(self, object):
+      pass
+  def __len__(self):
+      return len(self.dataset)
+  
+"""
+  def create_generator()
+    return ECGSequence() #
+"""
 
 if __name__ == "__main__":
+    mitdb = ECGDataset("../mitdb")
+    print(len(mitdb))
+    #nsr2db = ECGDataset("../nsr2db")
+    #print(len(nsr2db))
+    nsrdb = ECGDataset("../nsr2db")
+    print(len(nsrdb))
+    #mitdb = wfdb.rdrecord("../mitdb/100")
+    #print (mitdb.p_signal.shape)
+
+    #mixture_db = mitdb + nsrdb  
+    #mixture_db[0] # get a single record from our datset #<wfdb.io.record.Record object>
+
+    #training_samples = 0.8 * len(mixture_db)
+    #devining_samples = 0.1 * len(mixture_db)
+
+    #  TODO: shuffle mixture_db first.
+    #train_set = mixture_db[:training_samples]
+    #dev_set = 
+    #test_set =
+
+    #train_generator = train_set.create_generator()
+
+    # finish everything above by some deadline
+    #model = RNN()
+    #model.fit_generator(train_generator)
+
+    """
     configuration_file = "config.ini"
     np.random.seed(0)
     config = cp.ConfigParser()
@@ -96,3 +178,4 @@ if __name__ == "__main__":
                         callbacks=callbacks, validation_data=dev_generator, max_queue_size=10, workers=4,
                         use_multiprocessing=False, shuffle=True)
     model.save(os.path.join(output_dir, "final_weights.h5"))
+    """
