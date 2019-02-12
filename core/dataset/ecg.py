@@ -8,6 +8,11 @@ import configparser as cp
 import random
 from scipy.signal import resample
 
+import wfdb
+from os import listdir
+from os.path import isfile,join,splitext
+from random import shuffle
+
 logger = logging.getLogger('ecg')
 logger.setLevel(logging.INFO)
 config = cp.ConfigParser()
@@ -67,12 +72,45 @@ class ECGAnnotatedSequence(Sequence):
 
 
 class ECGDataset:
-    def __init__(self, name, dataset: List["ECGTaggedPair"]):
-        self.name = name
-        self.dataset = dataset
+    # currently, only takes directory path as input
+    def __init__(self, path=None, label=0):
+        if path != None:
+            self.path = None
+            self.dataset = []
 
-    def __getitem__(self, item):
-        return self.dataset[item]
+            files = [splitext(f)[0] for f in listdir(path) if isfile(join(path, f))]
+            files = list(set(files))
+            files.sort()
+
+            for f in files:
+                try:
+                    # label for each record
+                    ecgtaggedpair = ECGTaggedPair(wfdb.rdrecord(join(path,f)).p_signal,np.array([label]),join(path,f))
+                    self.dataset.append(ecgtaggedpair)
+                except FileNotFoundError:
+                    logger.log(logging.INFO, f"{join(path, f)} +  is not a record")
+
+            self.path = path
+
+    def __add__(self, object):
+        newECG = ECGDataset()
+        newECG.dataset = self.dataset + object.dataset
+        return newECG
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            newECG = ECGDataset()
+            newECG.dataset = self.dataset.__getitem__(key)
+            return newECG
+        return self.dataset[key]
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def shuffle(self):
+        x = [[d] for d in self.dataset]
+        shuffle(x)
+        self.dataset = [d[0] for d in x]
 
     @property
     def features(self):
@@ -84,9 +122,6 @@ class ECGDataset:
         for d in self.dataset:
             total += len(d)
         return total
-
-    def __len__(self):
-        return len(self.dataset)
 
     @classmethod
     def from_pickle(cls, pickle_file) -> "ECGDataset":
@@ -114,12 +149,10 @@ class ECGDataset:
         return ECGAnnotatedSequenceAugmented(self.dataset, random_time_scale_percent, sequence_length,
                                              total_training_segments, awgn_rms_percent, batch_size)
 
-
 class ECGTaggedPair:
-    def __init__(self, x, y, fs, record_name):
+    def __init__(self, x, y, record_name):
         self.x = x
-        self.y = y
-        self.fs = fs
+        self.y = y  # label
         self.record_name = record_name
 
     def __len__(self):
@@ -127,10 +160,14 @@ class ECGTaggedPair:
 
     def __getitem__(self, item):
         logger.log(logging.DEBUG, f"slicing by {item}")
-        return ECGTaggedPair(self.x[item], self.y[item], self.fs, self.record_name)
+        return ECGTaggedPair(self.x[item], self.y[item], self.record_name)
 
     def __repr__(self):
-        return f"ECG Tagged Pair of size ({self.x.shape}, {self.y.shape}) fs@{self.fs} from {self.record_name}"
+        return f"ECG Tagged Pair of size ({self.x.shape}, {self.y.shape}) from {self.record_name}"
+
+    def get_segment(self, start, end):
+        # TODO: some range check
+        return self.x[start:end]
 
     def get_random_segment(self, sequence_length=1300):
         starting_index = random.randint(0, len(self) - sequence_length)
