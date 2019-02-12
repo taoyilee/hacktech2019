@@ -7,7 +7,7 @@ from keras.models import model_from_json
 from keras.models import Model
 from core.util.plotting import plotecg, plot_annotation
 from matplotlib.backends.backend_pdf import PdfPages
-from core.dataset.ecg import ECGDataset
+from core.dataset.preprocessing import ECGDataset
 import matplotlib.pyplot as plt
 from core.models.rnn import model_compiler
 

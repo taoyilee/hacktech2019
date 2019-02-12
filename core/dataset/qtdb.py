@@ -6,7 +6,7 @@ import numpy as np
 import wfdb
 import logging
 
-from core.dataset.ecg import ECGDataset, ECGTaggedPair
+from core.dataset.preprocessing import ECGDataset, ECGTaggedPair
 from core.dataset.helper import normalize_signal
 
 logger = logging.getLogger('qtdb')

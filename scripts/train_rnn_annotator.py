@@ -10,7 +10,7 @@ from core.util.experiments import setup_experiment
 
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 
-from core.dataset.ecg import ECGDataset
+from core.dataset.preprocessing import ECGDataset
 
 logger = logging.getLogger('main')
 logger.setLevel(logging.DEBUG)

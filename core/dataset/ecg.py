@@ -1,5 +1,4 @@
 import os
-import pickle
 from typing import List
 from keras.utils import Sequence
 import numpy as np
@@ -7,11 +6,6 @@ import logging
 import configparser as cp
 import random
 from scipy.signal import resample
-
-import wfdb
-from os import listdir
-from os.path import isfile,join,splitext
-from random import shuffle
 
 logger = logging.getLogger('ecg')
 logger.setLevel(logging.INFO)
@@ -26,6 +20,8 @@ fh.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
+from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 
 
 class ECGAnnotatedSequenceAugmented(Sequence):
@@ -56,130 +52,26 @@ class ECGAnnotatedSequenceAugmented(Sequence):
         return batch_x, np.array(batch_y)
 
 
-class ECGAnnotatedSequence(Sequence):
+class BatchGenerator(Sequence):
 
-    def __init__(self, dataset: List["ECGTaggedPair"], batch_size=32):
+    def compute_num_segments(self) -> List:
+        return []
+
+    def __init__(self, dataset: ECGDataset, segment_length=1300, batch_size=32):
+        """
+
+        :param tickets: A list holding the recordnames of each record
+        :param num_segments: A list holding total number segments from each record
+        :param batch_size:
+        """
         self.dataset = dataset
+        self.num_segments = self.compute_num_segments()
         self.batch_size = batch_size
 
     def __len__(self):
-        return int(np.ceil(len(self.dataset) / float(self.batch_size)))
+        return int(sum(self.num_segments) / float(self.batch_size))
 
     def __getitem__(self, idx):
-        batch_x = [tagged_pair.x for tagged_pair in self.dataset[idx * self.batch_size:(idx + 1) * self.batch_size]]
-        batch_y = [tagged_pair.y for tagged_pair in self.dataset[idx * self.batch_size:(idx + 1) * self.batch_size]]
+        batch_x = [tagged_pair.x for tagged_pair in self.tickets[idx * self.batch_size:(idx + 1) * self.batch_size]]
+        batch_y = [tagged_pair.y for tagged_pair in self.tickets[idx * self.batch_size:(idx + 1) * self.batch_size]]
         return np.array(batch_x), np.array(batch_y)
-
-
-class ECGDataset:
-    # currently, only takes directory path as input
-    def __init__(self, path=None, label=0):
-        if path != None:
-            self.path = None
-            self.dataset = []
-
-            files = [splitext(f)[0] for f in listdir(path) if isfile(join(path, f))]
-            files = list(set(files))
-            files.sort()
-
-            for f in files:
-                try:
-                    # label for each record
-                    ecgtaggedpair = ECGTaggedPair(wfdb.rdrecord(join(path,f)).p_signal,np.array([label]),join(path,f))
-                    self.dataset.append(ecgtaggedpair)
-                except FileNotFoundError:
-                    logger.log(logging.INFO, f"{join(path, f)} +  is not a record")
-
-            self.path = path
-
-    def __add__(self, object):
-        newECG = ECGDataset()
-        newECG.dataset = self.dataset + object.dataset
-        return newECG
-
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            newECG = ECGDataset()
-            newECG.dataset = self.dataset.__getitem__(key)
-            return newECG
-        return self.dataset[key]
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def shuffle(self):
-        x = [[d] for d in self.dataset]
-        shuffle(x)
-        self.dataset = [d[0] for d in x]
-
-    @property
-    def features(self):
-        return self.dataset[0].x.shape[1]
-
-    @property
-    def total_samples(self):
-        total = 0
-        for d in self.dataset:
-            total += len(d)
-        return total
-
-    @classmethod
-    def from_pickle(cls, pickle_file) -> "ECGDataset":
-        with open(pickle_file, "rb") as f:
-            return pickle.load(f)
-
-    def save(self, output_dir):
-        with open(os.path.join(output_dir, f"{self.name}.pickle"), 'wb') as f:
-            pickle.dump(self, f)
-
-    def to_exploded_set(self, sequence_length=1300, overlap_percent=5):
-        logger.log(logging.INFO, f"dataset length: {len(self)}")
-        logger.log(logging.INFO, f"total_samples: {self.total_samples}")
-        logger.log(logging.INFO, f"dataset: {self.dataset}")
-        return [s for d in self.dataset for s in d.explode(sequence_length, overlap_percent)]
-
-    def to_sequence_generator(self, sequence_length=1300, overlap_percent=5, batch_size=32):
-        exploded_set = self.to_exploded_set(sequence_length, overlap_percent)
-        return ECGAnnotatedSequence(exploded_set, batch_size=batch_size)
-
-    def to_sequence_generator_augmented(self, random_time_scale_percent=10, sequence_length=1300, dilation_factor=5,
-                                        awgn_rms_percent=2, batch_size=32):
-        total_training_segments = int(dilation_factor * self.total_samples / sequence_length / batch_size)
-        logger.log(logging.INFO, f"total_training_segments = {total_training_segments}")
-        return ECGAnnotatedSequenceAugmented(self.dataset, random_time_scale_percent, sequence_length,
-                                             total_training_segments, awgn_rms_percent, batch_size)
-
-class ECGTaggedPair:
-    def __init__(self, x, y, record_name):
-        self.x = x
-        self.y = y  # label
-        self.record_name = record_name
-
-    def __len__(self):
-        return self.x.shape[0]
-
-    def __getitem__(self, item):
-        logger.log(logging.DEBUG, f"slicing by {item}")
-        return ECGTaggedPair(self.x[item], self.y[item], self.record_name)
-
-    def __repr__(self):
-        return f"ECG Tagged Pair of size ({self.x.shape}, {self.y.shape}) from {self.record_name}"
-
-    def get_segment(self, start, end):
-        # TODO: some range check
-        return self.x[start:end]
-
-    def get_random_segment(self, sequence_length=1300):
-        starting_index = random.randint(0, len(self) - sequence_length)
-        return self[starting_index:starting_index + sequence_length]
-
-    def explode(self, sequence_length=1300, overlap_percent=5):
-        sequence_length = int(sequence_length)
-        overlap_samples = sequence_length * overlap_percent // 100
-        overlap_length = int(sequence_length - overlap_samples)
-        segments = int(np.floor((len(self) - overlap_samples) / sequence_length) + 1)
-        logger.log(logging.DEBUG, f"original length: {len(self)}")
-        logger.log(logging.DEBUG, f"exploding by {sequence_length}/{overlap_length} segments: {segments}")
-        exploded_segments = [self[overlap_length * i:overlap_length * i + sequence_length] for i in range(segments - 1)]
-        exploded_segments.append(self[-sequence_length:])
-        return exploded_segments
