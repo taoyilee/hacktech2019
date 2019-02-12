@@ -42,9 +42,9 @@ if __name__ == "__main__":
     perct = config["qtdb"].getfloat("training_percent")
     percv = config["qtdb"].getfloat("validation_percent")
 
-    mitdb = ECGDataset("mitdb")
+    mitdb = ECGDataset("mitdb", 1)
     print(len(mitdb))
-    nsrdb = ECGDataset("nsrdb")
+    nsrdb = ECGDataset("nsrdb", 0)
     print(len(nsrdb))
 
     mixture_db = mitdb + nsrdb
