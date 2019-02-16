@@ -7,6 +7,7 @@ import argparse
 from core.util.experiments import setup_experiment
 
 from core.dataset.preprocessing import ECGDataset
+from core.dataset.ecg import BatchGenerator
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -34,6 +35,7 @@ if __name__ == "__main__":
     mitdb = ECGDataset.from_directory(mitdb_path, 1)
     nsrdb = ECGDataset.from_directory(nsrdb_path, 0)
     mixture_db = mitdb + nsrdb
+    # mixture_db = mixture_db[0:5]  # DEBUG, REMOVE LATER!!!!!!!!!!!!!!!!
     mixture_db.name = "mixture_db"
     print(mitdb, nsrdb, mixture_db, sep="\n")
 
@@ -52,4 +54,14 @@ if __name__ == "__main__":
     print(dev_set)
     print(test_set)
 
-    train_generator = train_set.create_generator()
+    train_generator = BatchGenerator(mixture_db, segment_length=1205)
+
+    print(train_generator.num_batch_each_record)
+    for k, v in train_generator.record_dict.items():
+        print(k, v)
+    # the_batch = train_generator[16]
+
+    for i in range(len(train_generator)):
+        x, y = train_generator[i]
+        print(x.shape, y.shape)
+        print(x, y)

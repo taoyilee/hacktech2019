@@ -94,11 +94,21 @@ class ECGDataset:
 
 
 class ECGRecordTicket:
+
+    def __init__(self):
+        self.hea_file = ""
+        self.label = None
+
     @classmethod
     def from_hea_filenames(cls, hea, label):
         new_instance = cls()
         new_instance.hea_file = hea
         new_instance.label = label
+
+        return new_instance
+
+    def __repr__(self):
+        return f"{self.hea_file} {self.label}"
 
 
 class ECGTaggedPair:

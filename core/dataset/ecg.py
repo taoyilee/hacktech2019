@@ -1,10 +1,11 @@
 import os
-from typing import List
+from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
 import logging
 import configparser as cp
 import random
+import wfdb
 from scipy.signal import resample
 
 logger = logging.getLogger('ecg')
@@ -54,8 +55,21 @@ class ECGAnnotatedSequenceAugmented(Sequence):
 
 class BatchGenerator(Sequence):
 
-    def compute_num_segments(self) -> List:
-        return []
+    def compute_num_batches(self) -> List:
+        return_list = []
+        # TODO: read the first line of .hea file to figure out sig_len
+        for ticket in self.dataset.tickets:
+            length = int(np.ceil(
+                wfdb.rdrecord(os.path.splitext(ticket.hea_file)[0]).sig_len / self.segment_length / self.batch_size))
+            return_list.append(length)
+        return return_list
+
+    def make_record_dict(self) -> Dict:
+        rec_dict = {}
+        for i in range(len(self.num_batch_each_record)):
+            rec_dict.update({k + sum(self.num_batch_each_record[:i]): (k, self.dataset.tickets[i]) for k in
+                             range(self.num_batch_each_record[i])})
+        return rec_dict
 
     def __init__(self, dataset: ECGDataset, segment_length=1300, batch_size=32):
         """
@@ -65,13 +79,20 @@ class BatchGenerator(Sequence):
         :param batch_size:
         """
         self.dataset = dataset
-        self.num_segments = self.compute_num_segments()
+        self.segment_length = segment_length
         self.batch_size = batch_size
+        self.num_batch_each_record = self.compute_num_batches()
+        self.record_dict = self.make_record_dict()
 
     def __len__(self):
-        return int(sum(self.num_segments) / float(self.batch_size))
+        return sum(self.num_batch_each_record)
 
     def __getitem__(self, idx):
-        batch_x = [tagged_pair.x for tagged_pair in self.tickets[idx * self.batch_size:(idx + 1) * self.batch_size]]
-        batch_y = [tagged_pair.y for tagged_pair in self.tickets[idx * self.batch_size:(idx + 1) * self.batch_size]]
-        return np.array(batch_x), np.array(batch_y)
+        local_batch_index, record_ticket = self.record_dict[idx]  # type: int, ECGRecordTicket
+        batch_length = self.segment_length * self.batch_size
+        signal = wfdb.rdrecord(os.path.splitext(record_ticket.hea_file)[0]).p_signal[
+                 local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
+        real_batch_size = int(np.ceil(len(signal) / self.segment_length))
+        batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
+        batch_x.append(signal[(real_batch_size - 2) * self.segment_length:(real_batch_size - 1) * self.segment_length])
+        return np.array(batch_x), np.array([record_ticket.label for _ in range(real_batch_size)])
