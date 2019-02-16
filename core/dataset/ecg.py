@@ -10,7 +10,7 @@ from scipy.signal import resample
 logger = logging.getLogger('ecg')
 logger.setLevel(logging.INFO)
 config = cp.ConfigParser()
-config.read("config.ini")
+config.read("config.ini.template")
 try:
     os.makedirs(config["logging"].get("logdir"))
 except FileExistsError:

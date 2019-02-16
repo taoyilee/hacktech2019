@@ -12,7 +12,7 @@ from core.dataset.helper import normalize_signal
 logger = logging.getLogger('qtdb')
 logger.setLevel(logging.DEBUG)
 config = cp.ConfigParser()
-config.read("config.ini")
+config.read("config.ini.template")
 REJECTED_TAGS = tuple(config["qtdb"].get("reject_tags").split(","))
 try:
     os.makedirs(config["logging"].get("logdir"))

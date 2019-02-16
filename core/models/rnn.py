@@ -13,7 +13,7 @@ np.random.seed(0)
 logger = logging.getLogger('rnn')
 logger.setLevel(logging.DEBUG)
 config = cp.ConfigParser()
-config.read("config.ini")
+config.read("config.ini.template")
 try:
     os.makedirs(config["logging"].get("logdir"))
 except FileExistsError:

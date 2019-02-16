@@ -11,7 +11,7 @@ if __name__ == "__main__":
     matplotlib.use('PDF')
     np.random.seed(0)
     config = cp.ConfigParser()
-    config.read("config.ini")
+    config.read("config.ini.template")
 
     db_paths = {"mitdb": config["mitdb"].get("dataset_path"), "nsrdb": config["nsrdb"].get("dataset_path")}
     for ecg_database, ecg_directory in db_paths.items():

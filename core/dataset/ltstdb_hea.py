@@ -27,7 +27,7 @@ class LtstdbHea:
     def __init__(self):
         self.signal_spec = []  # type:List[SignalSpec]
         config = cp.ConfigParser()
-        config.read("config.ini")
+        config.read("config.ini.template")
         self.dat_dir = os.path.join(config["DEFAULT"].get("dataset_dir"), config["DEFAULT"].get("dat_dir"))
 
     @property

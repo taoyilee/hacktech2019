@@ -3,13 +3,17 @@ import numpy as np
 import configparser as cp
 from shutil import copyfile
 import os
-
+import argparse
 from core.util.experiments import setup_experiment
 
 from core.dataset.preprocessing import ECGDataset
 
 if __name__ == "__main__":
-    configuration_file = "config.ini"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-c", type=str, help="configuration file")
+    args = parser.parse_args()
+    configuration_file = args.c
+    print(f"Using configuration file {configuration_file}")
     np.random.seed(0)
     config = cp.ConfigParser()
     config.read(configuration_file)

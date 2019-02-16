@@ -13,7 +13,7 @@ if __name__ == "__main__":
     matplotlib.use('PDF')
     np.random.seed(0)
     config = cp.ConfigParser()
-    config.read("config.ini")
+    config.read("config.ini.template")
     output_dir, tag = setup_experiment(config["DEFAULT"].get("experiments_dir"))
     REJECTED_TAGS = tuple(config["qtdb"].get("reject_tags").split(","))
     VALID_SEGMTS = tuple(config["qtdb"].get("valid_segments").split(","))
