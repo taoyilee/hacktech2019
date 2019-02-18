@@ -4,10 +4,14 @@ import configparser as cp
 from shutil import copyfile
 import os
 import argparse
+
+from core.trainer import Trainer
 from core.util.experiments import setup_experiment
 
 from core.dataset.preprocessing import ECGDataset
 from core.dataset.ecg import BatchGenerator
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -51,9 +55,10 @@ if __name__ == "__main__":
     print(dev_set)
     print(test_set)
 
-    train_generator = BatchGenerator(mixture_db, segment_length=1205)
+    train_generator = BatchGenerator(train_set, segment_length=config["preprocessing"].getint("sequence_length"), batch_size=config["preprocessing"].getint("batch_size"))
+    dev_generator = BatchGenerator(dev_set, segment_length=config["preprocessing"].getint("sequence_length"), batch_size=config["preprocessing"].getint("batch_size"))
 
-    print(train_generator.num_batch_each_record)
+    """print(train_generator.num_batch_each_record)
     for k, v in train_generator.record_dict.items():
         print(k, v)
     # the_batch = train_generator[16]
@@ -61,4 +66,9 @@ if __name__ == "__main__":
     for i in range(len(train_generator)):
         x, y = train_generator[i]
         print(x.shape, y.shape)
-        print(x, y)
+        print(x, y)"""
+
+    RNN_Trainer = Trainer(config, output_dir, tag)
+
+    RNN_Trainer.train(train_generator, dev_generator)
+
