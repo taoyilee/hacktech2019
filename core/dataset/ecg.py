@@ -42,8 +42,10 @@ class BatchGenerator(Sequence):
         return_list = []
         # TODO: read the first line of .hea file to figure out sig_len
         for ticket in self.dataset.tickets:
-            length = int(np.ceil(
-                wfdb.rdrecord(os.path.splitext(ticket.hea_file)[0]).sig_len / self.segment_length / self.batch_size))
+            with open(ticket.hea_file) as myfile:
+                head = [next(myfile) for _ in range(1)]
+            sig_len = int(str.split(head[0])[0])
+            length = int(np.ceil(sig_len / self.segment_length / self.batch_size))
             return_list.append(length)
         return return_list
 
