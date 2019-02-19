@@ -10,8 +10,14 @@ dataset_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
 
 [preprocessing]
-percent_train = 88
-percent_dev = 5
+NSR_DB_TAG = 0
+MIT_DB_TAG = 1
+
+; Take 2 records from MIT_DB/NSR_DB to build dev set
+dev_record_each = 2
+; Take 5 records from MIT_DB/NSR_DB to build test set
+test_record_each = 5
+
 batch_size = 512
 sequence_length = 1300
 overlap_percent = 5
