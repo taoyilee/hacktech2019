@@ -40,7 +40,6 @@ class BatchGenerator(Sequence):
 
     def compute_num_batches(self) -> List:
         return_list = []
-        # TODO: read the first line of .hea file to figure out sig_len
         for ticket in self.dataset.tickets:
             with open(ticket.hea_file) as myfile:
                 head = [next(myfile) for _ in range(1)]
