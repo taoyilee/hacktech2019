@@ -8,7 +8,6 @@ import logging
 
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 
-
 logger = logging.getLogger('main')
 logger.setLevel(logging.DEBUG)
 config = cp.ConfigParser()
@@ -52,14 +51,15 @@ class Trainer:
         return model
 
     def setup_callbacks(self):
-        callbacks = [ModelCheckpoint(os.path.join(self.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss', verbose=0,
-                                     save_best_only=False, save_weights_only=False, mode='auto', period=1),
-                     CSVLogger(os.path.join(self.output_dir, f"training.csv"), separator=',', append=False),
-                     ReduceLROnPlateau(monitor='val_loss', factor=0.1,
-                                       patience=self.config["RNN-train"].getint("patientce_reduce_lr"),
-                                       verbose=self.config["RNN-train"].getint("verbosity"), mode='min',
-                                       cooldown=0, min_lr=1e-12),
-                     TensorBoard(log_dir=os.path.join(self.config["RNN-train"].get("tensorboard_dir"), self.tag))]
+        callbacks = [
+            ModelCheckpoint(os.path.join(self.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss', verbose=0,
+                            save_best_only=False, save_weights_only=False, mode='auto', period=1),
+            CSVLogger(os.path.join(self.output_dir, f"training.csv"), separator=',', append=False),
+            ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+                              patience=self.config["RNN-train"].getint("patientce_reduce_lr"),
+                              verbose=self.config["RNN-train"].getint("verbosity"), mode='min',
+                              cooldown=0, min_lr=1e-12),
+            TensorBoard(log_dir=os.path.join(self.config["RNN-train"].get("tensorboard_dir"), self.tag))]
         if self.config["RNN-train"].getboolean("early_stop"):
             logger.log(logging.INFO, f"Early Stop enabled")
             callbacks.append(
@@ -69,7 +69,11 @@ class Trainer:
 
         return callbacks
 
-
     def train(self, training_set_generator, dev_set_generator):
         model = self.setup_model()
-        model.fit_generator(generator=training_set_generator, validation_data=dev_set_generator, epochs=self.config["RNN-train"].getint("epochs"), verbose=1, callbacks=self.setup_callbacks())
+        with open(os.path.join(self.output_dir, "model.json"), "w") as f:
+            f.write(model.to_json())
+        model.fit_generator(generator=training_set_generator, validation_data=dev_set_generator,
+                            epochs=self.config["RNN-train"].getint("epochs"), verbose=1,
+                            callbacks=self.setup_callbacks())
+        model.save(os.path.join(self.output_dir, "final_weights.h5"))
