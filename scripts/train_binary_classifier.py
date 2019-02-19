@@ -1,5 +1,4 @@
 import numpy as np
-# import glob
 import configparser as cp
 from shutil import copyfile
 import os
@@ -16,7 +15,10 @@ if __name__ == "__main__":
     parser.add_argument("-c", type=str, help="configuration file")
     args = parser.parse_args()
     configuration_file = args.c
-    print(f"Using configuration file {configuration_file}")
+    if os.path.isfile(configuration_file):
+        print(f"Using configuration file {configuration_file}")
+    else:
+        raise FileNotFoundError(f"configuration file {configuration_file} dose not exist")
     np.random.seed(0)
     config = cp.ConfigParser()
     config.read(configuration_file)
@@ -36,16 +38,15 @@ if __name__ == "__main__":
     dev_samples = int(percv * len(mixture_db))
     test_samples = len(mixture_db) - training_samples - dev_samples
 
-    train_set = mixture_db[:training_samples]
-    train_set.name = "training set"
-    dev_set = mixture_db[training_samples:training_samples + dev_samples]
-    dev_set.name = "development set"
-    test_set = mixture_db[training_samples + dev_samples:]
-    test_set.name = "test set"
-    print(train_set)
-    print(dev_set)
-    print(test_set)
-
+    train_set = mixture_db[:training_samples]  # type: ECGDataset
+    train_set.name = "training_set"
+    dev_set = mixture_db[training_samples:training_samples + dev_samples]  # type: ECGDataset
+    dev_set.name = "development_set"
+    test_set = mixture_db[training_samples + dev_samples:]  # type: ECGDataset
+    test_set.name = "test_set"
+    for data_set in [train_set, dev_set, test_set]:
+        print(data_set)
+        data_set.save(output_dir)
     train_generator = BatchGenerator(train_set, segment_length=config["preprocessing"].getint("sequence_length"),
                                      batch_size=config["preprocessing"].getint("batch_size"))
     dev_generator = BatchGenerator(dev_set, segment_length=config["preprocessing"].getint("sequence_length"),
