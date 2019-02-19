@@ -5,6 +5,9 @@ venv
 .idea
 # Byte-compiled / optimized / DLL files
 __pycache__/
+experiments
+logs
+tensorboard
 *.py[cod]
 *$py.class
 config.ini
