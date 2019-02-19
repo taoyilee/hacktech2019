@@ -1,9 +1,9 @@
 import os
-import random
 from os.path import join
 import glob
 import numpy as np
 import pickle
+import random
 
 
 class ECGDataset:
@@ -19,6 +19,9 @@ class ECGDataset:
         new_instance.tickets = [ECGRecordTicket.from_hea_filenames(hea_filename, label) for hea_filename in files]
 
         return new_instance
+
+    def shuffle(self):
+        random.shuffle(self.tickets)
 
     def __add__(self, object: "ECGDataset"):
         newECG = ECGDataset()
