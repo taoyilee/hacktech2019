@@ -2,26 +2,9 @@ import os
 from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
-import logging
-import configparser as cp
 import random
 import wfdb
 from scipy.signal import resample
-
-logger = logging.getLogger('ecg')
-logger.setLevel(logging.INFO)
-config = cp.ConfigParser()
-config.read("config.ini.template")
-try:
-    os.makedirs(config["logging"].get("logdir"))
-except FileExistsError:
-    pass
-fh = logging.FileHandler(os.path.join(config["logging"].get("logdir"), "ecg.log"), mode="w+")
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 
 

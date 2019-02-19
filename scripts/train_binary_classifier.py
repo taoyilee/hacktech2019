@@ -50,5 +50,5 @@ if __name__ == "__main__":
                                      batch_size=config["preprocessing"].getint("batch_size"))
     dev_generator = BatchGenerator(dev_set, segment_length=config["preprocessing"].getint("sequence_length"),
                                    batch_size=config["preprocessing"].getint("batch_size"))
-    RNN_Trainer = Trainer(config, output_dir, tag)
+    RNN_Trainer = Trainer(config, output_dir, tag, logger="trainer")
     RNN_Trainer.train(train_generator, dev_generator)

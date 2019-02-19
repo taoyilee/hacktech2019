@@ -3,31 +3,17 @@ from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from keras import optimizers
 import os
 import logging
-
+from core.util.logger import LoggerFactory
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 
 
 class Trainer:
-    logger = logging.getLogger('trainer')
 
-    def __init__(self, config, output_directory, tag):
+    def __init__(self, config, output_directory, tag, logger=None):
         self.config = config
         self.output_dir = output_directory
         self.tag = tag
-        self.setup_logger()
-
-    def setup_logger(self):
-        self.logger.handlers = []
-        self.logger.setLevel(logging.DEBUG)
-        try:
-            os.makedirs(self.config["DEFAULT"].get("logdir"))
-        except FileExistsError:
-            pass
-        fh = logging.FileHandler(os.path.join(self.config["DEFAULT"].get("logdir"), "trainer.log"), mode="w+")
-        fh.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
+        self.logger = LoggerFactory(config).get_logger(logger_name=logger)
 
     def setup_optimizer(self, model):
         print(f"*** Adding optimizer to the model ***")
