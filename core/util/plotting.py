@@ -1,57 +1,10 @@
 import wfdb
 from matplotlib.backends.backend_pdf import PdfPages
-
-from core.dataset.ltstdb_hea import LtstdbHea
 import matplotlib.pyplot as plt
-from biosppy.signals import ecg
 import os
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
-
-
-def plot_hea(hea: LtstdbHea, output_dir="plot", samples=None):
-    plt.figure(figsize=(20, 6))
-    for i, s in enumerate(hea.signals):
-        plt.plot(hea.timestamps[:samples], s[:samples], label=f"{hea.signal_spec[i].signal_description}")
-    plt.xlabel("Time (s)")
-    plt.ylabel(f"ECG Signal ({hea.signal_spec[0].adc_units})")
-    plt.title(f"{hea.name} ECG Signals")
-    plt.legend()
-    plt.grid()
-    plt.savefig(os.path.join(output_dir, f"{hea.name}_signals.png"))
-    plt.close()
-
-
-def plot_hea_biosppy(hea: LtstdbHea, output_dir="plot", samples=None):
-    ts, filtered, rpeaks, ts_tmpl, templates, ts_hr, hr = [], [], [], [], [], [], []
-    for i, s in enumerate(hea.signals):
-        descr = hea.signal_spec[i].signal_description
-        tsi, filteredi, rpeaksi, ts_tmpli, templatesi, ts_hri, hri = ecg.ecg(signal=hea.signals[i][:samples],
-                                                                             sampling_rate=hea.sampling_freq,
-                                                                             show=False)
-        ts.append(tsi), filtered.append(filteredi), rpeaks.append(rpeaksi), ts_tmpl.append(ts_tmpli)
-        templates.append(templatesi), ts_hr.append(ts_hri), hr.append(hri)
-        plt.figure(1)
-        plt.plot(ts_hri, hri, 's-', label=f"{descr}")
-
-        plt.figure()
-        for t in templatesi:
-            plt.plot(ts_tmpli, t, '-')
-        plt.xlabel("Time (s)")
-        plt.ylabel(f"ECG Signal ({hea.signal_spec[0].adc_units})")
-        plt.title(f"{hea.name} Templates - {descr}")
-        plt.grid()
-        plt.savefig(os.path.join(output_dir, f"{hea.name}_{descr}_templates.png"))
-
-    plt.figure(1)
-    plt.xlabel("Time (s)")
-    plt.ylabel(f"HR (bpm)")
-    plt.title(f"{hea.name} Hear Rate")
-    plt.grid()
-    plt.legend()
-    plt.savefig(os.path.join(output_dir, f"{hea.name}_hr.png"))
-    plt.close("all")
-    return ts, filtered, rpeaks, ts_tmpl, templates, ts_hr, hr
+from biosppy.signals.ecg import hamilton_segmenter
 
 
 def plotecg(x, y, begin=None, end=None, fs=250):
@@ -143,6 +96,7 @@ class RecordPlotter:
                 for i in range(record.n_sig):
                     plt.subplot(record.n_sig + 1, 1, i + 1)
                     plt.plot(time, record.p_signal[subslice, i], label=f"{record.sig_name[i]}", color=colors[i])
+
                     plt.ylabel("Voltage (mV)")
                     plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
                     plt.xticks(np.arange(min(time), max(time) + 1, 1))
@@ -182,3 +136,137 @@ class RecordPlotter:
                 plt.tight_layout()
                 pdf.savefig()
                 plt.close()
+
+
+class RecordPNGPlotter:
+    def __init__(self, signal_length_sec, ecg_database):
+        self.signal_length_sec = signal_length_sec
+        self.ecg_database = ecg_database
+
+    def __call__(self, record_hea):
+        record_name = os.path.splitext(record_hea)[0]
+        print(f"processing record {record_name}")
+        record = wfdb.io.rdrecord(record_name)
+        samples_per_segment = int(self.signal_length_sec / (1 / record.fs))
+
+        for starting_idx in range(0, record.sig_len, samples_per_segment):
+
+            # if os.path.isfile(img_out):
+            #     continue
+            subslice = slice(starting_idx, min(starting_idx + samples_per_segment, record.sig_len))
+            plt.figure()
+            time = (1 / record.fs) * np.arange(subslice.start, subslice.stop)
+            colors = ["red", "blue"]
+            arrythmia = False
+            for i in range(record.n_sig):
+                signal = record.p_signal[subslice, i]
+                plt.plot(time, signal, label=f"{record.sig_name[i]}", color=colors[i])
+                out = ecg.ecg(signal=signal, sampling_rate=record.fs, show=False)
+                plt.scatter(time[out["rpeaks"]], signal[out["rpeaks"]])
+                rr_int = np.array(time[out["rpeaks"][1:]] - time[out["rpeaks"][:-1]])
+                for rp_idx_a, rp_idx_b, rr in zip(out["rpeaks"][:-1], out["rpeaks"][1:], rr_int):
+                    plt.hlines(signal[rp_idx_a], time[rp_idx_a], time[rp_idx_b])
+                    plt.text((time[rp_idx_a] + time[rp_idx_b]) / 2, signal[rp_idx_a], f"{rr:.2f}")
+                hrv_perc = np.round(100 * (rr_int / np.min(rr_int) - 1), 2)
+                if np.any(hrv_perc > 15):
+                    arrythmia = True
+                plt.text(min(time), -1.5 + 0.5 * i, hrv_perc)
+                plt.ylabel("Voltage (mV)")
+                plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
+                plt.xticks(np.arange(min(time), max(time) + 1, 1))
+                plt.yticks(np.arange(-1.5, 2, 0.5))
+                for xx in np.arange(min(time), max(time), 0.2):
+                    plt.vlines(xx, -1.5, 1.5, color="gray", linewidth=0.5)
+                for xx in np.arange(min(time), max(time), 0.04):
+                    plt.vlines(xx, -1.5, 1.5, color="gray", linewidth=0.1)
+                for yy in np.arange(-1.5, 1.5, 0.1):
+                    plt.hlines(yy, min(time), max(time), color="gray", linewidth=0.1)
+
+            plt.xlim([min(time), max(time)])
+            plt.ylim([-1.5, 1.5])
+            plt.grid(which='both')
+            plt.legend(loc="upper right")
+            plt.xlabel("Time (s)")
+            if arrythmia:
+                img_out = os.path.join("plot", "arrythmia",
+                                       f'{self.ecg_database}_{record.record_name}_{starting_idx:05d}_view.png')
+            else:
+                img_out = os.path.join("plot", "nsr",
+                                       f'{self.ecg_database}_{record.record_name}_{starting_idx:05d}_view.png')
+            plt.savefig(img_out)
+            plt.close()
+
+
+class RecordPNGPlotterDF:
+    def __init__(self, mitdb_path, signal_length_sec, ecg_database):
+        self.mitdb_path = mitdb_path
+        self.signal_length_sec = signal_length_sec
+        self.ecg_database = ecg_database
+
+    def __call__(self, data_frame):
+        data_frame = data_frame[1]
+        record_path = os.path.join(self.mitdb_path, f"{data_frame['Record']}")
+        print(f"processing record {record_path}")
+        record = wfdb.io.rdrecord(record_path)
+        starting_idx = data_frame["Start_Index"]
+        ending_idx = data_frame["End_Index"]
+        subslice = slice(starting_idx, ending_idx)
+        plt.figure()
+        time = (1 / record.fs) * np.arange(subslice.start, subslice.stop)
+        colors = ["red", "blue"]
+        for i in range(record.n_sig):
+            signal = record.p_signal[subslice, i]
+            plt.plot(time, signal, label=f"{record.sig_name[i]}", color=colors[i])
+            plt.ylabel("Voltage (mV)")
+            plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
+            plt.xticks(np.arange(min(time), max(time) + 1, 1))
+            plt.yticks(np.arange(-1.5, 2, 0.5))
+            for xx in np.arange(min(time), max(time), 0.2):
+                plt.vlines(xx, -1.5, 1.5, color="gray", linewidth=0.5)
+            for xx in np.arange(min(time), max(time), 0.04):
+                plt.vlines(xx, -1.5, 1.5, color="gray", linewidth=0.1)
+            for yy in np.arange(-1.5, 1.5, 0.1):
+                plt.hlines(yy, min(time), max(time), color="gray", linewidth=0.1)
+
+        plt.xlim([min(time), max(time)])
+        plt.ylim([-1.5, 1.5])
+        plt.grid(which='both')
+        plt.legend(loc="upper right")
+        plt.xlabel("Time (s)")
+        img_out = os.path.join("plot", "pending_review",
+                               f'{self.ecg_database}_{record.record_name}_{starting_idx:05d}_view.png')
+        plt.savefig(img_out)
+        plt.close()
+
+
+def process_slice(record, subslice, threshold=15):
+    time = (1 / record.fs) * np.arange(subslice.start, subslice.stop)
+
+    for i in range(record.n_sig):
+        signal = record.p_signal[subslice, i]
+        rpeaks, = hamilton_segmenter(signal, record.fs)
+        # out = ecg.ecg(signal=signal, sampling_rate=record.fs, show=False)
+        try:
+            rr_int = np.vstack((rr_int, np.array(time[rpeaks[1:]] - time[rpeaks[:-1]])))
+        except Exception:
+            rr_int = np.array(time[rpeaks[1:]] - time[rpeaks[:-1]])
+    rr_int = np.mean(rr_int, axis=0)
+    hrv_perc = np.abs(np.round(100 * (rr_int / np.min(rr_int) - 1), 2))
+    arrythmia = np.any(hrv_perc > threshold)
+    return record.record_name, subslice.start, subslice.stop, arrythmia, rr_int.max(), rr_int.min(), hrv_perc.max(), hrv_perc.min(), hrv_perc, rr_int
+
+
+class RecordRR:
+    def __init__(self, signal_length_sec, ecg_database):
+        self.signal_length_sec = signal_length_sec
+        self.ecg_database = ecg_database
+
+    def __call__(self, record_hea):
+        record_name = os.path.splitext(record_hea)[0]
+        print(f"processing record {record_name}")
+        record = wfdb.io.rdrecord(record_name)
+        samples_per_segment = int(self.signal_length_sec / (1 / record.fs))
+
+        subslice = [slice(starting_idx, min(starting_idx + samples_per_segment, record.sig_len)) for starting_idx in
+                    range(0, record.sig_len, samples_per_segment)]
+        return tuple(map(lambda x: process_slice(record, x), subslice))
