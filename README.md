@@ -1,32 +1,66 @@
-# Compressed Sensing on Physiology Signal Sensing Platform
+# Explainable ECG
+This is a UCI Computer Science course project which aims to build explainable AI models to classify pathological events in electrocardiograms (ECG).
 
 ## System Requirements
 1. Python 3.6
+2. Keras==2.2.4
+3. tensorflow-gpu==1.12.0
+
 ## Quick Start
 1. Setup [Python virtual environment](https://virtualenv.pypa.io/en/latest/userguide/#usage) ```virtualenv ENV```, where ENV is a directory to place the new virtual environment
 2. Install requirments ```pip  install -r requirements.txt```
-3. Download dataset with ```python  scripts/download_dataset.py```
-4. Instantiate hea dataset object by:
-```python
-from dataset.ltstdb_hea import LtstdbHea
-hea = LtstdbHea.from_file("data/hea/s20011.hea")
-# hea.signals is a list of HeaSignals
-# hea.timestamps is a 1D numpy array containing timestamps corresponding to above signals
-```
-## Visualization
-```
-python scripts/plot_signals.py
-```
-Sample ouputs are shown below:
-![signals in #20011](doc/s20011_signals.png "signals in #20011")
-![heart rate plot](doc/s20011_hr.png "Heart Rate plot")
-![MV2_templates](doc/s20011_ML2_templates.png "ML2_templates")
-![ML2_templates](doc/s20011_MV2_templates.png "MV2_templates")
-
-## Dataset Object Model
 
 ## Configuration File
+```ini
+[DEFAULT]
+loglevel = DEBUG
+logdir = log
+experiments_dir = experiments
 
+[nsrdb]
+; Change this path to the folder which you store nsrdb
+dataset_path = C:\.....\Dataset\nsrdb
+
+[mitdb]
+; Change this path to the folder which you store mitdb
+dataset_path = C:\.....\Dataset\mitdb
+
+[preprocessing]
+NSR_DB_TAG = 0
+MIT_DB_TAG = 1
+
+; Take 2 records from MIT_DB/NSR_DB to build dev set
+dev_record_each = 2
+; Take 5 records from MIT_DB/NSR_DB to build test set
+test_record_each = 5
+
+batch_size = 512
+sequence_length = 1300
+overlap_percent = 5
+augmentation = True
+random_time_scale_percent = 20
+dilation_factor = 1
+awgn_rms_percent = 2
+
+[RNN-train]
+rnn_output_features = 32
+l2_regularization = 0
+dropout = 0.2
+initial_lr = 0.001
+initial_weights = None
+model_output = trained_model/model.h5
+tensorboard_dir = tensorboard
+epochs = 100
+patientce_reduce_lr = 2
+early_stop = True
+verbosity = 1
+
+[RNN-test]
+test_set = experiments/7Xa9GShsje_0122_112200/test.pickle
+model_json = experiments/7Xa9GShsje_0122_112200/model.json
+weights = experiments/7Xa9GShsje_0122_112200/final_weights.h5
+batch_size = 32
+```
 ## Acknowledgement
 The authors of this software package would like to thank following authors and their efforts in setting up 
 long-term S-T database.
@@ -45,7 +79,7 @@ And Physionet for hosting this dataset:
 
 ## License 
 
-Copyright 2018 Tao-Yi Lee, Delaram Amiri
+Copyright 2019 Tao-Yi Lee, Kenneth Stewart and Saehanseul Yi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
