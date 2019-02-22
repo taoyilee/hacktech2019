@@ -15,3 +15,4 @@ Keras==2.2.4
 xlrd==1.2.0
 pandas==0.23.4
 openpyxl==2.6.0
+biosppy==0.6.1
