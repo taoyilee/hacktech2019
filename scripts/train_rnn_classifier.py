@@ -25,7 +25,7 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 if __name__ == "__main__":
-    configuration_file = "config.ini"
+    configuration_file = "config.ini.template"
     np.random.seed(0)
     config = cp.ConfigParser()
     config.read(configuration_file)

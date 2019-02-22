@@ -7,7 +7,7 @@ from keras.models import model_from_json
 from keras.models import Model
 from core.util.plotting import plotecg, plot_annotation
 from matplotlib.backends.backend_pdf import PdfPages
-from core.dataset.ecg import ECGDataset
+from core.dataset.preprocessing import ECGDataset
 import matplotlib.pyplot as plt
 from core.models.rnn import model_compiler
 
@@ -15,7 +15,7 @@ matplotlib.use('PDF')
 logger = logging.getLogger('test')
 logger.setLevel(logging.DEBUG)
 config = cp.ConfigParser()
-config.read("config.ini")
+config.read("config.ini.template")
 try:
     os.makedirs(config["logging"].get("logdir"))
 except FileExistsError:
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     np.random.seed(0)
     config = cp.ConfigParser()
-    config.read("config.ini")
+    config.read("config.ini.template")
     test_set_pickle = config["RNN-test"].get("test_set")
     weights = config["RNN-test"].get("weights")
 

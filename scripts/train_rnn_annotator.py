@@ -10,10 +10,12 @@ from core.util.experiments import setup_experiment
 
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 
+from core.dataset.preprocessing import ECGDataset
+
 logger = logging.getLogger('main')
 logger.setLevel(logging.DEBUG)
 config = cp.ConfigParser()
-config.read("config.ini")
+config.read("config.ini.template")
 try:
     os.makedirs(config["logging"].get("logdir"))
 except FileExistsError:
@@ -25,7 +27,7 @@ fh.setFormatter(formatter)
 logger.addHandler(fh)
 
 if __name__ == "__main__":
-    configuration_file = "config.ini"
+    configuration_file = "config.ini.template"
     np.random.seed(0)
     config = cp.ConfigParser()
     config.read(configuration_file)
@@ -40,6 +42,35 @@ if __name__ == "__main__":
     perct = config["qtdb"].getfloat("training_percent")
     percv = config["qtdb"].getfloat("validation_percent")
 
+    mitdb = ECGDataset("mitdb", 1)
+    print(len(mitdb))
+    nsrdb = ECGDataset("nsrdb", 0)
+    print(len(nsrdb))
+
+    mixture_db = mitdb + nsrdb
+    print(len(mixture_db))
+    mixture_db[0] # get a single record from our datset #<wfdb.io.record.Record object>
+
+
+    training_samples = int(perct * len(mixture_db))
+    dev_samples = int(percv * len(mixture_db))
+    test_samples = training_samples + dev_samples
+
+    print(mixture_db[0].get_segment(1,10))
+    mixture_db.shuffle()
+    print(mixture_db[0].get_segment(1,10))
+    train_set = mixture_db[:training_samples]
+    dev_set = mixture_db[training_samples:dev_samples]
+    test_set = mixture_db[test_samples:]
+
+    #train_generator = train_set.create_generator()
+    train_generator = train_set.to_sequence_generator()
+
+    # finish everything above by some deadline
+    #model = RNN()
+    #model.fit_generator(train_generator)
+
+    """
     exclude = set()
     exclude.update(config["qtdb"].get("excluded_records").split(","))
 
@@ -96,3 +127,4 @@ if __name__ == "__main__":
                         callbacks=callbacks, validation_data=dev_generator, max_queue_size=10, workers=4,
                         use_multiprocessing=False, shuffle=True)
     model.save(os.path.join(output_dir, "final_weights.h5"))
+    """
