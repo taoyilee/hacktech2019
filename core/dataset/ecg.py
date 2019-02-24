@@ -79,4 +79,9 @@ class BatchGenerator(Sequence):
         real_batch_size = int(np.ceil(len(signal) / self.segment_length))
         batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
         batch_x.append(signal[(real_batch_size - 2) * self.segment_length:(real_batch_size - 1) * self.segment_length])
+
+        if enable_rand_scaling:
+            batchx = RandomScaleAugmenter.augment(batchx)
+
         return np.array(batch_x), np.array([record_ticket.label for _ in range(real_batch_size)])
+
