@@ -31,9 +31,6 @@ class Preprocessor(Action):
         for data_set in [train_set, dev_set, test_set]:
             print(data_set)
             data_set.save(self.experiment_env.output_dir)
-        train_generator = BatchGenerator(train_set,
-                                         segment_length=self.config["preprocessing"].getint("sequence_length"),
-                                         batch_size=self.config["preprocessing"].getint("batch_size"))
-        dev_generator = BatchGenerator(dev_set, segment_length=self.config["preprocessing"].getint("sequence_length"),
-                                       batch_size=self.config["preprocessing"].getint("batch_size"))
+        train_generator = BatchGenerator(train_set, self.config, enable_augmentation=True, logger="train_sequencer")
+        dev_generator = BatchGenerator(dev_set, self.config, enable_augmentation=False, logger="dev_sequencer")
         return train_generator, dev_generator
