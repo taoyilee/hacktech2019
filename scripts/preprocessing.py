@@ -1,67 +1,28 @@
-import numpy as np
-# import glob
 import configparser as cp
-from shutil import copyfile
 import os
 import argparse
-from core.util.experiments import setup_experiment
 
-from core.dataset.preprocessing import ECGDataset
-from core.dataset.ecg import BatchGenerator
+from core.util.experiments import ExperimentEnv
+from core.dataset import ECGDataset
+from core import Preprocessor
+from core import SequenceVisualizer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", type=str, help="configuration file")
     args = parser.parse_args()
     configuration_file = args.c
-    print(f"Using configuration file {configuration_file}")
-    np.random.seed(0)
+    if os.path.isfile(configuration_file):
+        print(f"Using configuration file {configuration_file}")
+    else:
+        raise FileNotFoundError(f"configuration file {configuration_file} dose not exist")
     config = cp.ConfigParser()
     config.read(configuration_file)
-    output_dir, tag = setup_experiment(config["DEFAULT"].get("experiments_dir"))
-    copyfile(configuration_file, os.path.join(output_dir, configuration_file))
-    REJECTED_TAGS = tuple(config["qtdb"].get("reject_tags").split(","))
-    VALID_SEGMTS = tuple(config["qtdb"].get("valid_segments").split(","))
-    CATEGORIES = tuple([int(i) for i in config["qtdb"].get("category").split(",")])
-
-    qtdbpath = config["qtdb"].get("dataset_path")
-    print(f"Using qtdb dataset from {qtdbpath}")
-    perct = config["preprocessing"].getfloat("percent_train")
-    percv = config["preprocessing"].getfloat("percent_dev")
-    mitdb_path = config["mitdb"].get("dataset_path")
-    nsrdb_path = config["nsrdb"].get("dataset_path")
-
-    # TODO: lazy load the dataset
-    mitdb = ECGDataset.from_directory(mitdb_path, 1)
-    nsrdb = ECGDataset.from_directory(nsrdb_path, 0)
-    mixture_db = mitdb + nsrdb
-    # mixture_db = mixture_db[0:5]  # DEBUG, REMOVE LATER!!!!!!!!!!!!!!!!
-    mixture_db.name = "mixture_db"
-    print(mitdb, nsrdb, mixture_db, sep="\n")
-
-    training_samples = int(perct * len(mixture_db))
-    dev_samples = int(percv * len(mixture_db))
-    # test_samples = training_samples + dev_samples
-    test_samples = len(mixture_db) - training_samples - dev_samples
-
-    train_set = mixture_db[:training_samples]
-    train_set.name = "training set"
-    dev_set = mixture_db[training_samples:training_samples + dev_samples]
-    dev_set.name = "development set"
-    test_set = mixture_db[training_samples + dev_samples:]
-    test_set.name = "test set"
-    print(train_set)
-    print(dev_set)
-    print(test_set)
-
-    train_generator = BatchGenerator(mixture_db, segment_length=1205)
-
-    print(train_generator.num_batch_each_record)
-    for k, v in train_generator.record_dict.items():
-        print(k, v)
-    # the_batch = train_generator[16]
-
-    for i in range(len(train_generator)):
-        x, y = train_generator[i]
-        print(x.shape, y.shape)
-        print(x, y)
+    experiment_env = ExperimentEnv(config)
+    mitdb_path, nsrdb_path = config["mitdb"].get("dataset_path"), config["nsrdb"].get("dataset_path")
+    mitdb = ECGDataset.from_directory(mitdb_path, config["preprocessing"].getint("MIT_DB_TAG"))
+    nsrdb = ECGDataset.from_directory(nsrdb_path, config["preprocessing"].getint("NSR_DB_TAG"))
+    train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess(mitdb, nsrdb)
+    sv = SequenceVisualizer(config, experiment_env)
+    sv.visualize(train_generator, batch_limit=None, segment_limit=15)
+    sv.visualize(dev_generator, batch_limit=None, segment_limit=15)

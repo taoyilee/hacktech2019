@@ -2,26 +2,9 @@ import os
 from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
-import logging
-import configparser as cp
 import random
 import wfdb
 from scipy.signal import resample
-
-logger = logging.getLogger('ecg')
-logger.setLevel(logging.INFO)
-config = cp.ConfigParser()
-config.read("config.ini.template")
-try:
-    os.makedirs(config["logging"].get("logdir"))
-except FileExistsError:
-    pass
-fh = logging.FileHandler(os.path.join(config["logging"].get("logdir"), "ecg.log"), mode="w+")
-fh.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 
 
@@ -57,10 +40,11 @@ class BatchGenerator(Sequence):
 
     def compute_num_batches(self) -> List:
         return_list = []
-        # TODO: read the first line of .hea file to figure out sig_len
         for ticket in self.dataset.tickets:
-            length = int(np.ceil(
-                wfdb.rdrecord(os.path.splitext(ticket.hea_file)[0]).sig_len / self.segment_length / self.batch_size))
+            with open(ticket.hea_file) as myfile:
+                head = [next(myfile) for _ in range(1)]
+            sig_len = int(str.split(head[0])[0])
+            length = int(np.ceil(sig_len / self.segment_length / self.batch_size))
             return_list.append(length)
         return return_list
 

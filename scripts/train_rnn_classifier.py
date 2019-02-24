@@ -13,7 +13,7 @@ from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLo
 logger = logging.getLogger('main')
 logger.setLevel(logging.DEBUG)
 config = cp.ConfigParser()
-config.read("config.ini.template")
+config.read("config.ini")
 try:
     os.makedirs(config["logging"].get("logdir"))
 except FileExistsError:

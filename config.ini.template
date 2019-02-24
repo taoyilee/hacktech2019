@@ -1,80 +1,46 @@
 [DEFAULT]
-base_url = https://www.physionet.org/physiobank/database/ltstdb/
-dataset_dir = data
-# hea_dir is relative to dataset_dir
-hea_dir = hea
-# dat_dir is relative to dataset_dir
-dat_dir = dat
-
+loglevel = DEBUG
+logdir = log
 experiments_dir = experiments
-
-[preprocessing]
-percent_train = 0.88
-percent_dev = 0.05
-
-batch_size = 32
-sequence_length = 1300
-overlap_percent = 5
 
 [nsrdb]
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
 
-[nsr2db]
-dataset_path = data\nsr2db\
-
 [mitdb]
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
 
-[RNN-arrhythmia]
-training_percent = 92
-validation_percent = 4
-testing_percent = 4
+[preprocessing]
+NSR_DB_TAG = 0
+MIT_DB_TAG = 1
 
-dataset_out = data/arrhythmia
+; Take 2 records from MIT_DB/NSR_DB to build dev set
+dev_record_each = 2
+; Take 5 records from MIT_DB/NSR_DB to build test set
+test_record_each = 5
+
+batch_size = 512
+sequence_length = 1300
+overlap_percent = 5
 augmentation = True
 random_time_scale_percent = 20
 dilation_factor = 1
 awgn_rms_percent = 2
-
-[qtdb]
-dataset_path = data\qtdb\
-reject_tags = Q,A,V,B
-valid_segments = aP,Pb,bQ,QR,RS,Sc,cT,Td,de,eU,Uf,dU,fa,da
-category = 0, 1, 1, 2, 3, 4, 4, 5, 5, 6, 6, 5, 6, 5
-;excluded_records = sel35,sel36,sel37,sel50,sel102,sel104,sel221,sel232,sel310
-excluded_records = None
-
-training_percent = 92
-validation_percent = 4
-testing_percent = 4
-
-augmentation = True
-random_time_scale_percent = 20
-dilation_factor = 1
-awgn_rms_percent = 2
-
-[RNN]
-l2_regularization = 0
-dropout = 0.2
-LSTM_units = 32
-initial_lr = 0.001
-
-[RNN-test]
-test_set = experiments/7Xa9GShsje_0122_112200/test.pickle
-model_json = experiments/7Xa9GShsje_0122_112200/model.json
-weights = experiments/7Xa9GShsje_0122_112200/final_weights.h5
-batch_size = 32
 
 [RNN-train]
+rnn_output_features = 32
+l2_regularization = 0
+dropout = 0.2
+initial_lr = 0.001
 initial_weights = None
 model_output = trained_model/model.h5
 tensorboard_dir = tensorboard
 epochs = 100
 patientce_reduce_lr = 2
 early_stop = True
-
 verbosity = 1
 
-[logging]
-loglevel = DEBUG
-logdir = log
+[RNN-test]
+test_set = experiments/7Xa9GShsje_0122_112200/test.pickle
+model_json = experiments/7Xa9GShsje_0122_112200/model.json
+weights = experiments/7Xa9GShsje_0122_112200/final_weights.h5
+batch_size = 32

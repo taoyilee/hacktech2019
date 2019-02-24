@@ -10,3 +10,9 @@ scipy==1.2.0
 seaborn==0.9.0
 sklearn==0.0
 wfdb==2.2.1
+tensorflow-gpu==1.12.0
+Keras==2.2.4
+xlrd==1.2.0
+pandas==0.23.4
+openpyxl==2.6.0
+biosppy==0.6.1
