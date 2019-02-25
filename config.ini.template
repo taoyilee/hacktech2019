@@ -18,7 +18,7 @@ dev_record_each = 2
 ; Take 5 records from MIT_DB/NSR_DB to build test set
 test_record_each = 5
 
-batch_size = 256
+batch_size = 512
 sequence_length = 1300
 overlap_percent = 5
 
@@ -26,10 +26,11 @@ random_time_scale_percent = 20
 dilation_factor = 1
 
 enable_awgn = True
-rms_noise_power_percent = 2
+rms_noise_power_percent = 3
 
-enable_rndinvert = True
+enable_rndinvert = False
 rndinvert_prob = 0.5
+
 [RNN-train]
 plot_datasets = False
 train_steps = 0
