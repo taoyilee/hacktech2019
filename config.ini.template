@@ -28,6 +28,8 @@ dilation_factor = 1
 enable_awgn = True
 rms_noise_power_percent = 2
 
+enable_rndinvert = True
+rndinvert_prob = 0.5
 [RNN-train]
 plot_datasets = False
 
