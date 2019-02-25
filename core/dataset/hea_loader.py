@@ -94,4 +94,5 @@ class HeaLoaderExcel(HeaLoader):
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
-        return record.p_signal[start_idx:ending_idx, :], self.label
+        label = self.get_label(record_name, start_idx, ending_idx)
+        return record.p_signal[start_idx:ending_idx, :], label
