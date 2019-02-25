@@ -44,7 +44,6 @@ early_stop = True
 verbosity = 1
 
 [RNN-test]
-test_set = experiments/7Xa9GShsje_0122_112200/test.pickle
-model_json = experiments/7Xa9GShsje_0122_112200/model.json
-weights = experiments/7Xa9GShsje_0122_112200/final_weights.h5
+plot_datasets = False
+experiment_env_tag = 7Xa9GShsje_0224_035758
 batch_size = 32
