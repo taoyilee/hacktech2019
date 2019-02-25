@@ -16,7 +16,7 @@ class Trainer(Action):
     def setup_optimizer(self, model):
         print(f"*** Adding optimizer to the model ***")
         adam = optimizers.adam(lr=self.config["RNN-train"].getfloat("initial_lr"))
-        model.compile(loss='binary_crossentropy', optimizer=adam, metrics=['binary_accuracy'])
+        model.compile(loss='binary_crossentropy', optimizer=adam)
 
     def setup_model(self):
         print(f"*** Setting up deep learning model ***")
@@ -47,8 +47,7 @@ class Trainer(Action):
             TensorBoard(log_dir=os.path.join(self.config["RNN-train"].get("tensorboard_dir"), self.experiment_env.tag))]
         if self.config["RNN-train"].getboolean("early_stop"):
             self.logger.log(logging.INFO, f"Early Stop enabled")
-            callbacks.append(
-                EarlyStopping(monitor='val_loss', min_delta=1e-8, patience=5, verbose=1, mode='min'))
+            callbacks.append(EarlyStopping(monitor='roc_auc_val', min_delta=1e-8, patience=5, verbose=1, mode='min'))
         else:
             self.logger.log(logging.INFO, f"Early Stop disabled")
 
@@ -63,4 +62,4 @@ class Trainer(Action):
                             callbacks=self.setup_callbacks())
         final_weights = os.path.join(self.experiment_env.output_dir, "final_weights.h5")
         model.save(final_weights)
-        self.experiment_env.add_key({"final_weights": final_weights})
+        self.experiment_env.add_key(**{"final_weights": final_weights})
