@@ -49,7 +49,7 @@ class Trainer(Action):
             TensorBoard(log_dir=os.path.join(self.config["RNN-train"].get("tensorboard_dir"), self.experiment_env.tag))]
         if self.config["RNN-train"].getboolean("early_stop"):
             self.logger.log(logging.INFO, f"Early Stop enabled")
-            callbacks.append(EarlyStopping(monitor='roc_auc_val', min_delta=1e-8, patience=5, verbose=1, mode='min'))
+            callbacks.append(EarlyStopping(monitor='roc_auc_val', min_delta=1e-8, patience=5, verbose=1, mode='max'))
         else:
             self.logger.log(logging.INFO, f"Early Stop disabled")
 
