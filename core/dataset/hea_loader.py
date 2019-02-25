@@ -60,7 +60,28 @@ class HeaLoaderExcel(HeaLoader):
         self.label_dataframe = pd.read_excel(excel_path)
 
     def get_label(self, record, start_idx, ending_idx):
-        return self.label_dataframe
+        excel_sx = self.label_dataframe['Start_Index']
+        df = self.label_dataframe
+        roi = df.loc[(df['Record']==int(record))] # rows of interest
+        rows_start = roi.loc[roi['Start_Index'] <= start_idx]
+        rows_end = roi.loc[ending_idx <= roi['End_Index']]
+        srow = rows_start.iloc[0]
+        erow = rows_end.iloc[0]
+
+        for index,row in rows_start.iterrows():
+            if srow['Start_Index'] < row['Start_Index']:
+                srow = row
+
+        for index,row in rows_end.iterrows():
+            if erow['End_Index'] > row['End_Index']:
+                erow = row
+
+        if pd.DataFrame.equals(srow, erow):
+            return srow['Arrhythmia']
+        else:
+            if srow['Arrhythmia'] == True or erow['Arrhythmia'] == True:
+                return True
+            #return False # this is very unlikely. So leave it commented to generate errors
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
