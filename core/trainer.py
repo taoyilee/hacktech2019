@@ -61,4 +61,6 @@ class Trainer(Action):
         model.fit_generator(generator=training_set_generator, validation_data=dev_set_generator,
                             epochs=self.config["RNN-train"].getint("epochs"), verbose=1,
                             callbacks=self.setup_callbacks())
-        model.save(os.path.join(self.experiment_env.output_dir, "final_weights.h5"))
+        final_weights = os.path.join(self.experiment_env.output_dir, "final_weights.h5")
+        model.save(final_weights)
+        self.experiment_env.add_key({"final_weights": final_weights})
