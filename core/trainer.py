@@ -25,9 +25,12 @@ class Trainer(Action):
         model = Sequential()
         model.add(Bidirectional(LSTM(self.config["RNN-train"].getint("rnn_output_features")), input_shape=input_shape))
         model.add(Dropout(self.config["RNN-train"].getfloat("dropout")))
+        self.logger.log(logging.INFO, f"Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
         model.add(BatchNormalization())
         model.add(Dense(1024, activation='relu'))
+        self.logger.log(logging.INFO, f"Adding Dense layer @ {1024} neurons")
         model.add(Dropout(self.config["RNN-train"].getfloat("dropout")))
+        self.logger.log(logging.INFO, f"Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
         model.add(BatchNormalization())
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
@@ -39,10 +42,9 @@ class Trainer(Action):
         callbacks = [
             ROCAUCCallback(training_set_generator, dev_set_generator),
             ModelCheckpoint(os.path.join(self.experiment_env.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss',
-                            verbose=0,
-                            save_best_only=False, save_weights_only=False, mode='auto', period=1),
+                            verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1),
             CSVLogger(os.path.join(self.experiment_env.output_dir, f"training.csv"), separator=',', append=False),
-            ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+            ReduceLROnPlateau(monitor='loss', factor=0.1,
                               patience=self.config["RNN-train"].getint("patientce_reduce_lr"),
                               verbose=self.config["RNN-train"].getint("verbosity"), mode='min',
                               cooldown=0, min_lr=1e-12),
