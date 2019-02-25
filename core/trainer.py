@@ -3,6 +3,7 @@ from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from keras import optimizers
 import os
 from core.action import Action
+from core.models.callbacks import ROCAUCCallback
 import logging
 from core.util.logger import LoggerFactory
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
@@ -33,9 +34,10 @@ class Trainer(Action):
         self.setup_optimizer(model)
         return model
 
-    def setup_callbacks(self):
+    def setup_callbacks(self, training_set_generator, dev_set_generator):
         print(f"*** Setting up callbacks ***")
         callbacks = [
+            ROCAUCCallback(training_set_generator, dev_set_generator),
             ModelCheckpoint(os.path.join(self.experiment_env.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss',
                             verbose=0,
                             save_best_only=False, save_weights_only=False, mode='auto', period=1),
@@ -57,9 +59,15 @@ class Trainer(Action):
         model = self.setup_model()
         with open(os.path.join(self.experiment_env.output_dir, "model.json"), "w") as f:
             f.write(model.to_json())
-        model.fit_generator(generator=training_set_generator, validation_data=dev_set_generator,
+        training_steps = self.config["RNN-train"].getint("train_steps")
+        training_steps = None if training_steps == 0 else training_steps
+        self.logger.log(logging.INFO, f"Training step = {training_steps}")
+        model.fit_generator(generator=training_set_generator,
+                            steps_per_epoch=training_steps,
+                            validation_data=dev_set_generator,
                             epochs=self.config["RNN-train"].getint("epochs"), verbose=1,
-                            callbacks=self.setup_callbacks())
+                            callbacks=self.setup_callbacks(training_set_generator, dev_set_generator))
         final_weights = os.path.join(self.experiment_env.output_dir, "final_weights.h5")
         model.save(final_weights)
+        self.logger.log(logging.INFO, f"Saving weights to {final_weights}")
         self.experiment_env.add_key(**{"final_weights": final_weights})
