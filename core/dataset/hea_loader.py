@@ -68,20 +68,29 @@ class HeaLoaderExcel(HeaLoader):
         srow = rows_start.iloc[0]
         erow = rows_end.iloc[0]
 
-        for index,row in rows_start.iterrows():
+        for idx,row in rows_start.iterrows():
             if srow['Start_Index'] < row['Start_Index']:
                 srow = row
 
-        for index,row in rows_end.iterrows():
+        for idx,row in rows_end.iterrows():
             if erow['End_Index'] > row['End_Index']:
                 erow = row
 
         if pd.DataFrame.equals(srow, erow):
             return srow['Arrhythmia']
         else:
-            if srow['Arrhythmia'] == True or erow['Arrhythmia'] == True:
-                return True
-            #return False # this is very unlikely. So leave it commented to generate errors
+            start_row_idx = len(roi)
+            for idx,row in roi.iterrows():
+                if idx < start_row_idx:
+                    if row['Arrhythmia'] == srow['Arrhythmia']:
+                        start_row_idx = idx
+                if idx >= start_row_idx:
+                    if row['Arrhythmia'] == erow['Arrhythmia']:
+                        break
+                    if row['Arrhythmia'] == True:
+                        return True
+
+        #return False # this is highly unlikely. So leave it commented to generate errors
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
