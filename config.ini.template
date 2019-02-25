@@ -21,12 +21,16 @@ test_record_each = 5
 batch_size = 512
 sequence_length = 1300
 overlap_percent = 5
-augmentation = True
+
 random_time_scale_percent = 20
 dilation_factor = 1
-awgn_rms_percent = 2
+
+enable_awgn = True
+rms_noise_power_percent = 2
 
 [RNN-train]
+plot_datasets = False
+
 rnn_output_features = 32
 l2_regularization = 0
 dropout = 0.2
