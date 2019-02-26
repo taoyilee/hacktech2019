@@ -59,7 +59,7 @@ class HeaLoaderExcel(HeaLoader):
         super(HeaLoaderExcel, self).__init__(hea_directory, excel_path)
         self.label_dataframe = pd.read_excel(excel_path)
 
-    def get_label(self, record, start_idx, ending_idx, default_label=False):
+    def get_label(self, record, start_idx, ending_idx, default_label=0):
         df = self.label_dataframe
         roi = df.loc[(df['Record']==int(record))] # rows of interest
         if len(roi) == 0:
@@ -74,26 +74,29 @@ class HeaLoaderExcel(HeaLoader):
                 srow = row
 
         for idx,row in rows_end.iterrows():
-            if erow['End_Index'] > row['End_Index']:
+            if erow['End_Index'] < row['End_Index']:
                 erow = row
 
         if pd.DataFrame.equals(srow, erow):
-            return srow['Arrhythmia']
+            if srow['Arrhythmia'] == True:
+                return 1
+            else:
+                return 0
         else:
             start_row_idx = len(roi)
             for idx,row in roi.iterrows():
                 if idx < start_row_idx:
-                    if row['Arrhythmia'] == srow['Arrhythmia']:
+                    if row['Start_Index'] == srow['Start_Index']:
                         start_row_idx = idx
                 if idx >= start_row_idx:
-                    if row['Arrhythmia'] == erow['Arrhythmia']:
-                        break
                     if row['Arrhythmia'] == True:
-                        return True
+                        return 1
+                    if row['End_Index'] == erow['End_Index']:
+                        break
 
-        #return False # this is highly unlikely. So leave it commented to generate errors
+        return 0
 
-    def get_record_segment(self, record_name, start_idx, ending_idx):
+    def get_record_segment(self, record_name, start_idx, ending_idx, default_label=0):
         record = self.get_record(record_name)
-        label = self.get_label(record_name, start_idx, ending_idx)
+        label = self.get_label(record_name, start_idx, ending_idx, default_label)
         return record.p_signal[start_idx:ending_idx, :], label

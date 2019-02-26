@@ -8,7 +8,6 @@ import wfdb
 from scipy.signal import resample
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 from core.dataset.hea_loader import HeaLoaderExcel
-from core.augmenters import AWGNAugmenter, RndInvertAugmenter
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
 from core.util.logger import LoggerFactory
 import configparser as cp
@@ -150,6 +149,7 @@ class BatchGenerator(Sequence):
         batch_x.append(segment)
         labels.append(label)
         batch_x = np.array(batch_x)
+        labels = np.array(labels)
 
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
@@ -163,4 +163,5 @@ class BatchGenerator(Sequence):
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
 
-        return batch_x, np.array(labels)
+        return batch_x, labels
+        #return batch_x, np.array([record_ticket.label for _ in range(real_batch_size)])
