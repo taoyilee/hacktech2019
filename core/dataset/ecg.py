@@ -163,4 +163,4 @@ class BatchGenerator(Sequence):
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
 
-        return np.array(batch_x), np.array([record_ticket.label for _ in range(real_batch_size)])
+        return batch_x, np.array(labels)
