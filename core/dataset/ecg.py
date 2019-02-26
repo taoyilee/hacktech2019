@@ -9,11 +9,13 @@ from scipy.signal import resample
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 from core.dataset.hea_loader import HeaLoaderExcel
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter
+from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
 from core.util.logger import LoggerFactory
 import configparser as cp
 
 config = cp.ConfigParser()
 config.read("config.ini")
+
 
 class ECGAnnotatedSequenceAugmented(Sequence):
 
@@ -46,6 +48,8 @@ class ECGAnnotatedSequenceAugmented(Sequence):
 class BatchGenerator(Sequence):
     awgn_augmenter = None
     rndinv_augmenter = None
+    rndscale_augmenter = None
+    rnddc_augmenter = None
 
     def read_siglen(self) -> Dict:
         return_dict = {}
@@ -105,6 +109,18 @@ class BatchGenerator(Sequence):
             self.logger.log(logging.DEBUG, f"Random inversion augmenter enabled")
             self.logger.log(logging.DEBUG, f"{self.rndinv_augmenter}")
 
+        if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndscale"):
+            self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"),
+                                                        self.config["preprocessing"].getfloat("scale_prob"))
+            self.logger.log(logging.DEBUG, f"Random scaling augmenter enabled")
+            self.logger.log(logging.DEBUG, f"{self.rndscale_augmenter}")
+
+        if enable_augmentation and self.config["preprocessing"].getboolean("enable_rnddc"):
+            self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"),
+                                                  self.config["preprocessing"].getfloat("dc_prob"))
+            self.logger.log(logging.DEBUG, f"Random Dc augmenter enabled")
+            self.logger.log(logging.DEBUG, f"{self.rnddc_augmenter}")
+
     def __len__(self):
         return sum(self.num_batch_each_record)
 
@@ -115,26 +131,36 @@ class BatchGenerator(Sequence):
         record_name = os.path.splitext(os.path.basename(record_ticket.hea_file))[0]
 
         hea_directory = os.path.dirname(record_ticket.hea_file)
-        excel_path = "mitdb_labeled.xlsx"
+        excel_path = self.config = config["mitdb"].get("excel_label")
         heaLoaderExcel = HeaLoaderExcel(hea_directory, excel_path)
-        #signal = wfdb.rdrecord(record_name).p_signal[
-        #         local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
 
         real_batch_size = int(np.ceil(batch_length / self.segment_length))
         batch_x = []
         labels = []
-        for b in range(real_batch_size -1):
+        for b in range(real_batch_size - 1):
             start_idx = local_batch_index * batch_length + b * self.segment_length
             ending_idx = start_idx + self.segment_length
             segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
             batch_x.append(segment)
             labels.append(label)
 
-        #batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
         start_idx = local_batch_index * batch_length + (real_batch_size - 2) * self.segment_length
         ending_idx = start_idx + self.segment_length
         segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
         batch_x.append(segment)
         labels.append(label)
+        batch_x = np.array(batch_x)
 
-        return np.array(batch_x), np.array([record_ticket.label for _ in range(real_batch_size)])
+        if self.awgn_augmenter is not None:
+            batch_x = self.awgn_augmenter.augment(batch_x)
+
+        if self.rndinv_augmenter is not None:
+            batch_x = self.rndinv_augmenter.augment(batch_x)
+
+        if self.rndscale_augmenter is not None:
+            batch_x = self.rndscale_augmenter.augment(batch_x)
+
+        if self.rnddc_augmenter is not None:
+            batch_x = self.rnddc_augmenter.augment(batch_x)
+
+        return batch_x, np.array(labels)

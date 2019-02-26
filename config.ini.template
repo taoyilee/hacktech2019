@@ -8,6 +8,7 @@ dataset_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
 
 [mitdb]
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
+excel_label = mitdb_labeled.xlsx
 
 [preprocessing]
 NSR_DB_TAG = 0
@@ -28,7 +29,7 @@ dilation_factor = 1
 enable_awgn = True
 rms_noise_power_percent = 3
 
-enable_rndinvert = False
+enable_rndinvert = True
 rndinvert_prob = 0.5
 
 [RNN-train]
@@ -49,5 +50,5 @@ verbosity = 1
 
 [RNN-test]
 plot_datasets = False
-experiment_env_tag = 7Xa9GShsje_0224_035758
+experiment_env_tag = e7fb162ab8_0224_112759
 batch_size = 32
