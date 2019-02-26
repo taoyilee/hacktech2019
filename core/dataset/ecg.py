@@ -122,20 +122,16 @@ class BatchGenerator(Sequence):
 
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
         if self.rndinv_augmenter is not None:
             batch_x = self.rndinv_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
         if self.rndscale_augmenter is not None:
 
             batch_x = self.rndscale_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
 
 
