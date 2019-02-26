@@ -131,10 +131,8 @@ class BatchGenerator(Sequence):
         record_name = os.path.splitext(os.path.basename(record_ticket.hea_file))[0]
 
         hea_directory = os.path.dirname(record_ticket.hea_file)
-        excel_path = "mitdb_labeled.xlsx"
+        excel_path = self.config = config["mitdb"].get("excel_label")
         heaLoaderExcel = HeaLoaderExcel(hea_directory, excel_path)
-        # signal = wfdb.rdrecord(record_name).p_signal[
-        #         local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
 
         real_batch_size = int(np.ceil(batch_length / self.segment_length))
         batch_x = []
@@ -145,9 +143,6 @@ class BatchGenerator(Sequence):
             segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
             batch_x.append(segment)
             labels.append(label)
-        signal = wfdb.rdrecord(os.path.splitext(record_ticket.hea_file)[0]).p_signal[
-                 local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
-        real_batch_size = int(np.ceil(len(signal) / self.segment_length))
 
         start_idx = local_batch_index * batch_length + (real_batch_size - 2) * self.segment_length
         ending_idx = start_idx + self.segment_length
