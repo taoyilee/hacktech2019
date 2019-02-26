@@ -8,7 +8,7 @@ class RndInvertAugmenter(Augmenter):
         self.invert_probability = invert_probability
 
     def augment(self, batch_x: np.ndarray):
-        batch_aug = random.choice([batch_x, -batch_x], weights=[1 - self.invert_probability, self.invert_probability])
+        batch_aug = random.choices([batch_x, -batch_x], weights=[1 - self.invert_probability, self.invert_probability])
         return batch_aug
 
     def __repr__(self):
