@@ -59,9 +59,41 @@ class HeaLoaderExcel(HeaLoader):
         super(HeaLoaderExcel, self).__init__(hea_directory, excel_path)
         self.label_dataframe = pd.read_excel(excel_path)
 
-    def get_label(self, record, start_idx, ending_idx):
-        return self.label_dataframe
+    def get_label(self, record, start_idx, ending_idx, default_label=False):
+        df = self.label_dataframe
+        roi = df.loc[(df['Record']==int(record))] # rows of interest
+        if len(roi) == 0:
+            return default_label
+        rows_start = roi.loc[roi['Start_Index'] <= start_idx]
+        rows_end = roi.loc[ending_idx <= roi['End_Index']]
+        srow = rows_start.iloc[0]
+        erow = rows_end.iloc[0]
+
+        for idx,row in rows_start.iterrows():
+            if srow['Start_Index'] < row['Start_Index']:
+                srow = row
+
+        for idx,row in rows_end.iterrows():
+            if erow['End_Index'] > row['End_Index']:
+                erow = row
+
+        if pd.DataFrame.equals(srow, erow):
+            return srow['Arrhythmia']
+        else:
+            start_row_idx = len(roi)
+            for idx,row in roi.iterrows():
+                if idx < start_row_idx:
+                    if row['Arrhythmia'] == srow['Arrhythmia']:
+                        start_row_idx = idx
+                if idx >= start_row_idx:
+                    if row['Arrhythmia'] == erow['Arrhythmia']:
+                        break
+                    if row['Arrhythmia'] == True:
+                        return True
+
+        #return False # this is highly unlikely. So leave it commented to generate errors
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
-        return record.p_signal[start_idx:ending_idx, :], self.label
+        label = self.get_label(record_name, start_idx, ending_idx)
+        return record.p_signal[start_idx:ending_idx, :], label
