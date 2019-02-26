@@ -110,12 +110,14 @@ class BatchGenerator(Sequence):
             self.logger.log(logging.DEBUG, f"{self.rndinv_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndscale"):
-            self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"), self.config["preprocessing"].getfloat("scale_prob"))
+            self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"),
+                                                        self.config["preprocessing"].getfloat("scale_prob"))
             self.logger.log(logging.DEBUG, f"Random scaling augmenter enabled")
             self.logger.log(logging.DEBUG, f"{self.rndscale_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rnddc"):
-            self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"), self.config["preprocessing"].getfloat("dc_prob"))
+            self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"),
+                                                  self.config["preprocessing"].getfloat("dc_prob"))
             self.logger.log(logging.DEBUG, f"Random Dc augmenter enabled")
             self.logger.log(logging.DEBUG, f"{self.rnddc_augmenter}")
 
@@ -146,16 +148,13 @@ class BatchGenerator(Sequence):
         signal = wfdb.rdrecord(os.path.splitext(record_ticket.hea_file)[0]).p_signal[
                  local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
         real_batch_size = int(np.ceil(len(signal) / self.segment_length))
-        batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
-        batch_x.append(signal[(real_batch_size - 2) * self.segment_length:(real_batch_size - 1) * self.segment_length])
-        batch_x = np.array(batch_x)
 
-        # batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
         start_idx = local_batch_index * batch_length + (real_batch_size - 2) * self.segment_length
         ending_idx = start_idx + self.segment_length
         segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
         batch_x.append(segment)
         labels.append(label)
+        batch_x = np.array(batch_x)
 
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
