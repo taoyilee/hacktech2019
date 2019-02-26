@@ -21,12 +21,28 @@ test_record_each = 5
 batch_size = 512
 sequence_length = 1300
 overlap_percent = 5
-augmentation = True
+
 random_time_scale_percent = 20
 dilation_factor = 1
-awgn_rms_percent = 2
+
+enable_awgn = True
+rms_noise_power_percent = 3
+
+enable_rndinvert = False
+rndinvert_prob = 0.5
+
+enable_rndscale = False
+scale = 1.2
+scale_prob = 0.5
+
+enable_rnddc = True
+dc = .2
+dc_prob = 0.5
 
 [RNN-train]
+plot_datasets = False
+train_steps = 0
+
 rnn_output_features = 32
 l2_regularization = 0
 dropout = 0.2
@@ -40,7 +56,6 @@ early_stop = True
 verbosity = 1
 
 [RNN-test]
-test_set = experiments/7Xa9GShsje_0122_112200/test.pickle
-model_json = experiments/7Xa9GShsje_0122_112200/model.json
-weights = experiments/7Xa9GShsje_0122_112200/final_weights.h5
+plot_datasets = False
+experiment_env_tag = 7Xa9GShsje_0224_035758
 batch_size = 32
