@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
@@ -6,6 +7,8 @@ import random
 import wfdb
 from scipy.signal import resample
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
+from core.augmenters import AWGNAugmenter, RndInvertAugmenter
+from core.util.logger import LoggerFactory
 
 
 class ECGAnnotatedSequenceAugmented(Sequence):
@@ -37,6 +40,8 @@ class ECGAnnotatedSequenceAugmented(Sequence):
 
 
 class BatchGenerator(Sequence):
+    awgn_augmenter = None
+    rndinv_augmenter = None
 
     def compute_num_batches(self) -> List:
         return_list = []
@@ -55,18 +60,39 @@ class BatchGenerator(Sequence):
                              range(self.num_batch_each_record[i])})
         return rec_dict
 
-    def __init__(self, dataset: ECGDataset, segment_length=1300, batch_size=32):
+    def __init__(self, dataset: ECGDataset, config, enable_augmentation=False, logger=None):
         """
 
         :param tickets: A list holding the recordnames of each record
         :param num_segments: A list holding total number segments from each record
         :param batch_size:
         """
+        self.config = config
+        self.logger = LoggerFactory(config).get_logger(logger_name=logger)
+
         self.dataset = dataset
-        self.segment_length = segment_length
-        self.batch_size = batch_size
+
+        self.segment_length = config["preprocessing"].getint("sequence_length")
+        self.logger.log(logging.INFO, f"Sequence length is {self.segment_length}")
+
+        self.batch_size = config["preprocessing"].getint("batch_size")
+        self.logger.log(logging.INFO, f"Batch size is {self.batch_size}")
+
         self.num_batch_each_record = self.compute_num_batches()
+        self.logger.log(logging.INFO, f"Number of batches from each record are {self.num_batch_each_record}")
+        self.logger.log(logging.INFO, f"Total # batches {sum(self.num_batch_each_record)}")
+
         self.record_dict = self.make_record_dict()
+
+        if enable_augmentation and self.config["preprocessing"].getboolean("enable_awgn"):
+            self.awgn_augmenter = AWGNAugmenter(self.config["preprocessing"].getfloat("rms_noise_power_percent"))
+            self.logger.log(logging.DEBUG, f"AWGN augmenter enabled")
+            self.logger.log(logging.DEBUG, f"{self.awgn_augmenter}")
+
+        if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndinvert"):
+            self.rndinv_augmenter = RndInvertAugmenter(self.config["preprocessing"].getfloat("rndinvert_prob"))
+            self.logger.log(logging.DEBUG, f"Random inversion augmenter enabled")
+            self.logger.log(logging.DEBUG, f"{self.rndinv_augmenter}")
 
     def __len__(self):
         return sum(self.num_batch_each_record)
@@ -77,10 +103,11 @@ class BatchGenerator(Sequence):
         signal = wfdb.rdrecord(os.path.splitext(record_ticket.hea_file)[0]).p_signal[
                  local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
         real_batch_size = int(np.ceil(len(signal) / self.segment_length))
-
         batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
         batch_x.append(signal[(real_batch_size - 2) * self.segment_length:(real_batch_size - 1) * self.segment_length])
-
-        if enable_awgn:
-            batch_x = AWGN_augmenter.augment(batch_x)
-        return np.array(batch_x), np.array([record_ticket.label for _ in range(real_batch_size)])
+        batch_x = np.array(batch_x)
+        if self.awgn_augmenter is not None:
+            batch_x = self.awgn_augmenter.augment(batch_x)
+        if self.awgn_augmenter is not None:
+            batch_x = self.awgn_augmenter.augment(batch_x)
+        return batch_x, np.array([record_ticket.label for _ in range(real_batch_size)])
