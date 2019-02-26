@@ -59,10 +59,11 @@ class HeaLoaderExcel(HeaLoader):
         super(HeaLoaderExcel, self).__init__(hea_directory, excel_path)
         self.label_dataframe = pd.read_excel(excel_path)
 
-    def get_label(self, record, start_idx, ending_idx):
-        excel_sx = self.label_dataframe['Start_Index']
+    def get_label(self, record, start_idx, ending_idx, default_label=False):
         df = self.label_dataframe
         roi = df.loc[(df['Record']==int(record))] # rows of interest
+        if len(roi) == 0:
+            return default_label
         rows_start = roi.loc[roi['Start_Index'] <= start_idx]
         rows_end = roi.loc[ending_idx <= roi['End_Index']]
         srow = rows_start.iloc[0]

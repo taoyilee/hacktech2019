@@ -31,10 +31,10 @@ class TestHeaLoader(object):
         assert not isinstance(self.hea_loader.load(hea_directory, label), datatype)
 
     @pytest.mark.parametrize("record, start_idx, ending_idx, expected_label",
-                             [("100", 0, 3600, True),
-                              ("100", 3601, 7200, True),
-                             ("100", 21600, 25200, False),
-                              ("100", 21500, 25100, True)])
+                             [(100, 0, 3600, True),
+                              (100, 3601, 7200, True),
+                             (100, 21600, 25200, False),
+                              (100, 21500, 25100, True)])
     def test_get_label(self, record, start_idx, ending_idx, expected_label):
         instance = self.hea_loader.load(mitdb_path, "mitdb_labeled.xlsx")
         assert instance.get_label(record, start_idx, ending_idx) == expected_label

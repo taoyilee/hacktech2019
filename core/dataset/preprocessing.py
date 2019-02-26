@@ -18,6 +18,9 @@ class ECGDataset:
         files = glob.glob(join(dataset_directory, "*.hea"))
         new_instance.tickets = [ECGRecordTicket.from_hea_filenames(hea_filename, label) for hea_filename in files]
 
+        #FIXME: for fast debugging
+        #new_instance = new_instance[1:2]
+
         return new_instance
 
     def shuffle(self):
