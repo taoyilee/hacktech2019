@@ -7,9 +7,13 @@ import random
 import wfdb
 from scipy.signal import resample
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
+from core.dataset.hea_loader import HeaLoaderExcel
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter
 from core.util.logger import LoggerFactory
+import configparser as cp
 
+config = cp.ConfigParser()
+config.read("config.ini")
 
 class ECGAnnotatedSequenceAugmented(Sequence):
 
@@ -43,12 +47,19 @@ class BatchGenerator(Sequence):
     awgn_augmenter = None
     rndinv_augmenter = None
 
-    def compute_num_batches(self) -> List:
-        return_list = []
+    def read_siglen(self) -> Dict:
+        return_dict = {}
         for ticket in self.dataset.tickets:
             with open(ticket.hea_file) as myfile:
                 head = [next(myfile) for _ in range(1)]
             sig_len = int(str.split(head[0])[0])
+            return_dict[ticket] = sig_len
+        return return_dict
+
+    def compute_num_batches(self) -> List:
+        return_list = []
+        for ticket in self.dataset.tickets:
+            sig_len = self.siglen_each_record[ticket]
             length = int(np.ceil(sig_len / self.segment_length / self.batch_size))
             return_list.append(length)
         return return_list
@@ -71,13 +82,13 @@ class BatchGenerator(Sequence):
         self.logger = LoggerFactory(config).get_logger(logger_name=logger)
 
         self.dataset = dataset
-
         self.segment_length = config["preprocessing"].getint("sequence_length")
         self.logger.log(logging.INFO, f"Sequence length is {self.segment_length}")
 
         self.batch_size = config["preprocessing"].getint("batch_size")
         self.logger.log(logging.INFO, f"Batch size is {self.batch_size}")
 
+        self.siglen_each_record = self.read_siglen()
         self.num_batch_each_record = self.compute_num_batches()
         self.logger.log(logging.INFO, f"Number of batches from each record are {self.num_batch_each_record}")
         self.logger.log(logging.INFO, f"Total # batches {sum(self.num_batch_each_record)}")
@@ -100,14 +111,30 @@ class BatchGenerator(Sequence):
     def __getitem__(self, idx):
         local_batch_index, record_ticket = self.record_dict[idx]  # type: int, ECGRecordTicket
         batch_length = self.segment_length * self.batch_size
-        signal = wfdb.rdrecord(os.path.splitext(record_ticket.hea_file)[0]).p_signal[
-                 local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
-        real_batch_size = int(np.ceil(len(signal) / self.segment_length))
-        batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
-        batch_x.append(signal[(real_batch_size - 2) * self.segment_length:(real_batch_size - 1) * self.segment_length])
-        batch_x = np.array(batch_x)
-        if self.awgn_augmenter is not None:
-            batch_x = self.awgn_augmenter.augment(batch_x)
-        if self.awgn_augmenter is not None:
-            batch_x = self.awgn_augmenter.augment(batch_x)
-        return batch_x, np.array([record_ticket.label for _ in range(real_batch_size)])
+
+        record_name = os.path.splitext(os.path.basename(record_ticket.hea_file))[0]
+
+        hea_directory = os.path.dirname(record_ticket.hea_file)
+        excel_path = "mitdb_labeled.xlsx"
+        heaLoaderExcel = HeaLoaderExcel(hea_directory, excel_path)
+        #signal = wfdb.rdrecord(record_name).p_signal[
+        #         local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
+
+        real_batch_size = int(np.ceil(batch_length / self.segment_length))
+        batch_x = []
+        labels = []
+        for b in range(real_batch_size -1):
+            start_idx = local_batch_index * batch_length + b * self.segment_length
+            ending_idx = start_idx + self.segment_length
+            segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
+            batch_x.append(segment)
+            labels.append(label)
+
+        #batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
+        start_idx = local_batch_index * batch_length + (real_batch_size - 2) * self.segment_length
+        ending_idx = start_idx + self.segment_length
+        segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
+        batch_x.append(segment)
+        labels.append(label)
+
+        return np.array(batch_x), np.array([record_ticket.label for _ in range(real_batch_size)])
