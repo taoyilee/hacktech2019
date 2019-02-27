@@ -3,7 +3,6 @@ from core import Preprocessor
 import os
 import argparse
 from core.util.experiments import ExperimentEnv
-from core.dataset.preprocessing import ECGDataset
 from core import SequenceVisualizer, Trainer
 
 if __name__ == "__main__":
@@ -18,10 +17,8 @@ if __name__ == "__main__":
     config = cp.ConfigParser()
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_training(config)
-    mitdb_path, nsrdb_path = config["mitdb"].get("dataset_path"), config["nsrdb"].get("dataset_path")
-    mitdb = ECGDataset.from_directory(mitdb_path, config["preprocessing"].getint("MIT_DB_TAG"))
-    nsrdb = ECGDataset.from_directory(nsrdb_path, config["preprocessing"].getint("NSR_DB_TAG"))
-    train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess(mitdb, nsrdb)
+
+    train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess()
 
     if config["RNN-train"].getboolean("plot_datasets"):
         sv = SequenceVisualizer(config, experiment_env)

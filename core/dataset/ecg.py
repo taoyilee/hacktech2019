@@ -3,9 +3,6 @@ import logging
 from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
-import random
-import wfdb
-from scipy.signal import resample
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 from core.dataset.hea_loader import HeaLoaderExcel
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
@@ -16,56 +13,17 @@ config = cp.ConfigParser()
 config.read("config.ini")
 
 
-class ECGAnnotatedSequenceAugmented(Sequence):
-
-    def __init__(self, dataset: List["ECGTaggedPair"], random_time_scale_percent=20, sequence_length=1300,
-                 total_training_segments=512, awgn_rms_percent=2, batch_size=32):
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self.random_time_scale = random_time_scale_percent
-        self.sequence_length = sequence_length
-        self.total_training_segments = total_training_segments
-        self.awgn_ratio = awgn_rms_percent / 100
-
-    def __len__(self):
-        return self.total_training_segments
-
-    def __getitem__(self, idx):
-        original_seq_length = [int(self.sequence_length * random.uniform(1 - self.random_time_scale / 100,
-                                                                         1 + self.random_time_scale / 100)) for _ in
-                               range(self.batch_size)]
-        raw_sequences = [random.choice(self.dataset).get_random_segment(seq_len) for seq_len in original_seq_length]
-        batch_x = np.array([resample(r.x, self.sequence_length) for r in raw_sequences])
-        batch_x_rms = np.sqrt(np.mean(batch_x ** 2, axis=1))
-        noise = np.random.normal(0, self.awgn_ratio * batch_x_rms,
-                                 (self.sequence_length, batch_x_rms.shape[0], batch_x_rms.shape[1])).swapaxes(0, 1)
-        batch_x = batch_x + noise
-        batch_y = [resample(r.y, self.sequence_length) for r in raw_sequences]
-        return batch_x, np.array(batch_y)
-
-
 class BatchGenerator(Sequence):
     awgn_augmenter = None
     rndinv_augmenter = None
     rndscale_augmenter = None
     rnddc_augmenter = None
 
-    def compute_num_batches(self) -> List:
-        return_list = []
-        for ticket in self.dataset.tickets:
-            with open(ticket.hea_file) as myfile:
-                head = [next(myfile) for _ in range(1)]
-            ticket.siglen = int(str.split(head[0])[3])
-            length = int(np.ceil(ticket.siglen / self.segment_length / self.batch_size))
-            ticket.num_batches = length
-            return_list.append(length)
-        return return_list
-
     def make_record_dict(self) -> Dict:
         rec_dict = {}
-        for i in range(len(self.num_batch_each_record)):
-            rec_dict.update({k + sum(self.num_batch_each_record[:i]): (k, self.dataset.tickets[i]) for k in
-                             range(self.num_batch_each_record[i])})
+        for i in range(len(self.batch_numbers)):
+            rec_dict.update({k + sum(self.batch_numbers[:i]): (k, self.dataset.tickets[i]) for k in
+                             range(self.batch_numbers[i])})
         return rec_dict
 
     def __init__(self, dataset: ECGDataset, config, enable_augmentation=False, logger=None):
@@ -85,11 +43,12 @@ class BatchGenerator(Sequence):
         self.batch_size = config["preprocessing"].getint("batch_size")
         self.logger.log(logging.INFO, f"Batch size is {self.batch_size}")
 
-        self.num_batch_each_record = self.compute_num_batches()
-        self.logger.log(logging.INFO, f"Number of batches from each record are {self.num_batch_each_record}")
-        self.logger.log(logging.INFO, f"Total # batches {sum(self.num_batch_each_record)}")
+        self.batch_numbers = np.ceil(self.dataset.record_len / self.segment_length / self.batch_size).astype(int)
+        self.logger.log(logging.INFO, f"Number of batches from each record are {self.batch_numbers}")
+        self.logger.log(logging.INFO, f"Total # batches {sum(self.batch_numbers)}")
 
         self.record_dict = self.make_record_dict()
+        self.logger.log(logging.INFO, f"Record dictionary {self.record_dict}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_awgn"):
             self.awgn_augmenter = AWGNAugmenter(self.config["preprocessing"].getfloat("rms_noise_power_percent"))
@@ -114,18 +73,14 @@ class BatchGenerator(Sequence):
             self.logger.log(logging.DEBUG, f"{self.rnddc_augmenter}")
 
     def __len__(self):
-        return sum(self.num_batch_each_record)
+        return sum(self.batch_numbers)
 
     def __getitem__(self, idx):
         local_batch_index, record_ticket = self.record_dict[idx]  # type: int, ECGRecordTicket
+        self.logger.log(logging.DEBUG, f"batch[{idx}] {local_batch_index} - {record_ticket}")
         batch_length = self.segment_length * self.batch_size
 
         record_name = os.path.splitext(os.path.basename(record_ticket.hea_file))[0]
-
-        hea_directory = os.path.dirname(record_ticket.hea_file)
-        excel_path = self.config = config["mitdb"].get("excel_label")
-        heaLoaderExcel = HeaLoaderExcel(hea_directory, excel_path, logger=self.logger)
-
         real_batch_size = int(np.ceil(batch_length / self.segment_length))
         batch_x = []
         labels = []
@@ -133,9 +88,9 @@ class BatchGenerator(Sequence):
             start_idx = local_batch_index * batch_length + b * self.segment_length
             ending_idx = start_idx + self.segment_length
             if (start_idx > record_ticket.siglen) or (ending_idx > record_ticket.siglen):
-                start_idx -= abs(record_ticket.num_batches * batch_length-record_ticket.siglen)
-                ending_idx -= abs(record_ticket.num_batches * batch_length-record_ticket.siglen)
-            segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
+                start_idx -= abs(record_ticket.num_batches * batch_length - record_ticket.siglen)
+                ending_idx -= abs(record_ticket.num_batches * batch_length - record_ticket.siglen)
+            segment, label = record_ticket.hea_loader.get_record_segment(record_name, start_idx, ending_idx)
             batch_x.append(segment)
             labels.append(label)
         batch_x = np.array(batch_x)

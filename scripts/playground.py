@@ -3,6 +3,7 @@ import os
 import argparse
 
 from core.util.experiments import ExperimentEnv
+from core.dataset import ECGDataset
 from core import Preprocessor
 from core import SequenceVisualizer
 
@@ -18,7 +19,16 @@ if __name__ == "__main__":
     config = cp.ConfigParser()
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_training(config)
-    train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess()
-    sv = SequenceVisualizer(config, experiment_env)
-    sv.visualize(train_generator, batch_limit=None, segment_limit=15)
-    sv.visualize(dev_generator, batch_limit=None, segment_limit=15)
+    preprocessor = Preprocessor(config, experiment_env)
+    print(preprocessor.mitdb.record_len)
+    print(preprocessor.nsrdb.record_len)
+    for t in preprocessor.mitdb.tickets:
+        print(t)
+    for t in preprocessor.nsrdb.tickets:
+        print(t)
+
+    # nsrdb = ECGDataset.from_directory(nsrdb_path, config["preprocessing"].getint("NSR_DB_TAG"))
+    # train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess(mitdb, nsrdb)
+    # sv = SequenceVisualizer(config, experiment_env)
+    # sv.visualize(train_generator, batch_limit=None, segment_limit=15)
+    # sv.visualize(dev_generator, batch_limit=None, segment_limit=15)

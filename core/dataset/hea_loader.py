@@ -11,21 +11,22 @@ class HeaLoader(ABC):
     signal = []
     hea_directory = ""
 
-    def __init__(self, hea_directory, label):
+    def __init__(self, hea_directory, label, logger=None):
         """
 
         :param hea_directory: The directory which contains *.hea and *.dat
         :param label:  either 0, 1
         """
+        self.logger = logger if logger is not None else LoggerFactory.dummy()
         self.label = label
         self.hea_directory = hea_directory
 
     @classmethod
-    def load(cls, hea_directory, label):
+    def load(cls, hea_directory, label, logger=None):
         if isinstance(label, int):
-            return HeaLoaderFixedLabel(hea_directory, label)
+            return HeaLoaderFixedLabel(hea_directory, label, logger)
         else:
-            return HeaLoaderExcel(hea_directory, label)
+            return HeaLoaderExcel(hea_directory, label, logger)
 
     @lru_cache(maxsize=48)
     def get_record(self, record_name):
@@ -36,19 +37,42 @@ class HeaLoader(ABC):
     def get_record_segment(self, record_name, start_idx, ending_idx):
         pass
 
+    def __getstate__(self):
+        # Copy the object's state from self.__dict__ which contains
+        # all our instance attributes. Always use the dict.copy()
+        # method to avoid modifying the original state.
+        state = self.__dict__.copy()
+        # Remove the unpicklable entries.
+        del state['logger']
+        return state
+
+    def __setstate__(self, state):
+        # Restore instance attributes (i.e., filename and lineno).
+        self.__dict__.update(state)
+        # Restore the previously opened file's state. To do so, we need to
+        # # reopen it and read from it until the line count is restored.
+        # file = open(self.filename)
+        # for _ in range(self.lineno):
+        #     file.readline()
+        # # Finally, save the file.
+        # self.file = file
+
 
 class HeaLoaderFixedLabel(HeaLoader):
-    def __init__(self, hea_directory, label):
+    def __init__(self, hea_directory, label, logger=None):
         """
 
                 :param hea_directory: The directory which contains *.hea and *.dat
                 :param label:  either 0, 1
                 """
-        super(HeaLoaderFixedLabel, self).__init__(hea_directory, label)
+        super(HeaLoaderFixedLabel, self).__init__(hea_directory, label, logger)
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
         return record.p_signal[start_idx:ending_idx, :], self.label
+
+    def __repr__(self):
+        return f"Fixed label loader using label: {self.label}"
 
 
 class HeaLoaderExcel(HeaLoader):
@@ -58,8 +82,7 @@ class HeaLoaderExcel(HeaLoader):
                 :param hea_directory: The directory which contains *.hea and *.dat
                 :param excel_path:  an Excel spread sheet
                 """
-        self.logger = logger if logger is not None else LoggerFactory.dummy()
-        super(HeaLoaderExcel, self).__init__(hea_directory, excel_path)
+        super(HeaLoaderExcel, self).__init__(hea_directory, excel_path, logger)
         if not os.path.isfile(excel_path):
             raise FileNotFoundError(f"Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
@@ -111,3 +134,6 @@ class HeaLoaderExcel(HeaLoader):
         record = self.get_record(record_name)
         label = self.get_label(record_name, start_idx, ending_idx, default_label)
         return record.p_signal[start_idx:ending_idx, :], label
+
+    def __repr__(self):
+        return f"Excel HEA loader using {self.label}"

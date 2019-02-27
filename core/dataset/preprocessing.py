@@ -4,23 +4,25 @@ import glob
 import numpy as np
 import pickle
 import random
+from typing import List
 
 
 class ECGDataset:
 
     def __init__(self, name=""):
-        self.tickets = []
+        self.tickets = []  # type:List[ECGRecordTicket]
         self.name = name
 
+    @property
+    def record_len(self) -> np.ndarray:
+        return np.array([t.siglen for t in self.tickets])
+
     @classmethod
-    def from_directory(cls, dataset_directory, label):
+    def from_directory(cls, dataset_directory, hea_loader):
         new_instance = cls(name=os.path.split(dataset_directory)[1])
         files = glob.glob(join(dataset_directory, "*.hea"))
-        new_instance.tickets = [ECGRecordTicket.from_hea_filenames(hea_filename, label) for hea_filename in files]
-
-        #DEBUG: for fast debugging
-        #new_instance = new_instance[1:2]
-
+        new_instance.tickets = [ECGRecordTicket.from_hea_filenames(hea_filename, hea_loader) for hea_filename in
+                                files]
         return new_instance
 
     def shuffle(self):
@@ -35,9 +37,12 @@ class ECGDataset:
         sliced_instance = ECGDataset()
         if isinstance(index, slice):
             sliced_instance.tickets = self.tickets[index]
+            sliced_instance.name = f"{self.name}_{index.start}_{index.stop}"
             return sliced_instance
-        sliced_instance.tickets = [self.tickets[index]]
-        return sliced_instance[index]
+        else:  # single element
+            sliced_instance.tickets = [self.tickets[index]]
+            sliced_instance.name = f"{self.name}_{index}"
+            return sliced_instance
 
     def __repr__(self):
         return f"{self.name} has {self.__len__()} records"
@@ -57,23 +62,31 @@ class ECGDataset:
 
 
 class ECGRecordTicket:
+    _siglen = None
+    hea_loader = None
 
     def __init__(self):
         self.hea_file = ""
         self.label = None
-        self.siglen = 0
         self.num_batches = 0
 
+    @property
+    def siglen(self) -> int:
+        if self._siglen is None:
+            with open(self.hea_file) as hea_fptr:
+                head = [next(hea_fptr) for _ in range(1)]
+            self._siglen = int(str.split(head[0])[3])
+        return self._siglen
+
     @classmethod
-    def from_hea_filenames(cls, hea, label):
+    def from_hea_filenames(cls, hea, hea_loader):
         new_instance = cls()
         new_instance.hea_file = hea
-        new_instance.label = label
-
+        new_instance.hea_loader = hea_loader
         return new_instance
 
     def __repr__(self):
-        return f"{self.hea_file} {self.label}"
+        return f"{self.hea_file} {self.hea_loader}"
 
 
 class ECGTaggedPair:
