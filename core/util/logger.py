@@ -7,6 +7,10 @@ class LoggerFactory:
     def __init__(self, config):
         self.config = config
 
+    @classmethod
+    def dummy(cls):
+        return logging.getLogger('dummy')
+
     def get_logger(self, logger_name=None, logging_level=logging.DEBUG):
         if logger_name is None:
             return logging.getLogger('dummy')

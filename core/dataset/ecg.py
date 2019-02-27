@@ -131,7 +131,7 @@ class BatchGenerator(Sequence):
 
         hea_directory = os.path.dirname(record_ticket.hea_file)
         excel_path = self.config = config["mitdb"].get("excel_label")
-        heaLoaderExcel = HeaLoaderExcel(hea_directory, excel_path)
+        heaLoaderExcel = HeaLoaderExcel(hea_directory, excel_path, logger=self.logger)
 
         real_batch_size = int(np.ceil(batch_length / self.segment_length))
         batch_x = []
@@ -164,4 +164,3 @@ class BatchGenerator(Sequence):
             batch_x = self.rnddc_augmenter.augment(batch_x)
 
         return batch_x, labels
-        #return batch_x, np.array([record_ticket.label for _ in range(real_batch_size)])

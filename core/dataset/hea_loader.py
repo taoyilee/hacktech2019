@@ -1,8 +1,10 @@
 import pandas as pd
+import logging
 from abc import ABC, abstractmethod
 import wfdb
 import os
 from functools import lru_cache
+from core.util.logger import LoggerFactory
 
 
 class HeaLoader(ABC):
@@ -50,30 +52,39 @@ class HeaLoaderFixedLabel(HeaLoader):
 
 
 class HeaLoaderExcel(HeaLoader):
-    def __init__(self, hea_directory, excel_path):
+    def __init__(self, hea_directory, excel_path, logger=None):
         """
 
                 :param hea_directory: The directory which contains *.hea and *.dat
                 :param excel_path:  an Excel spread sheet
                 """
+        self.logger = logger if logger is not None else LoggerFactory.dummy()
         super(HeaLoaderExcel, self).__init__(hea_directory, excel_path)
+        if not os.path.isfile(excel_path):
+            raise FileNotFoundError(f"Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
 
     def get_label(self, record, start_idx, ending_idx, default_label=0):
         df = self.label_dataframe
-        roi = df.loc[(df['Record']==int(record))] # rows of interest
+        roi = df.loc[(df['Record'] == int(record))]  # rows of interest
+        self.logger.log(logging.DEBUG, f"Accessing {record} from sample {start_idx} to {ending_idx}")
+        self.logger.log(logging.DEBUG, "Rows of interest are: (showing first 10 rows if more rows are selected)")
+        self.logger.log(logging.DEBUG, roi.iloc[:, :4])
         if len(roi) == 0:
             return default_label
         rows_start = roi.loc[roi['Start_Index'] <= start_idx]
+
+        self.logger.log(logging.DEBUG, rows_start.iloc[:, :4])
         rows_end = roi.loc[ending_idx <= roi['End_Index']]
+        self.logger.log(logging.DEBUG, rows_end.iloc[:, :4])
         srow = rows_start.iloc[0]
         erow = rows_end.iloc[0]
 
-        for idx,row in rows_start.iterrows():
+        for idx, row in rows_start.iterrows():
             if srow['Start_Index'] < row['Start_Index']:
                 srow = row
 
-        for idx,row in rows_end.iterrows():
+        for idx, row in rows_end.iterrows():
             if erow['End_Index'] < row['End_Index']:
                 erow = row
 
@@ -84,7 +95,7 @@ class HeaLoaderExcel(HeaLoader):
                 return 0
         else:
             start_row_idx = len(roi)
-            for idx,row in roi.iterrows():
+            for idx, row in roi.iterrows():
                 if idx < start_row_idx:
                     if row['Start_Index'] == srow['Start_Index']:
                         start_row_idx = idx
