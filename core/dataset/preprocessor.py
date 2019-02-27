@@ -1,11 +1,26 @@
 from core import Action
 from core.dataset.ecg import BatchGenerator
 from core.dataset import ECGDataset
+from core.dataset.hea_loader import HeaLoader
+from core.util.logger import LoggerFactory
 
 
 class Preprocessor(Action):
+    mitdb = None
+    nsrdb = None
+
     def __init__(self, config, experiment_env):
         super(Preprocessor, self).__init__(config, experiment_env)
+        self.init_ecg_datasets()
+
+    def init_ecg_datasets(self):
+        mitdb_path, nsrdb_path = self.config["mitdb"].get("dataset_path"), self.config["nsrdb"].get("dataset_path")
+        heaLoader_mit = HeaLoader.load(mitdb_path, self.config["mitdb"].get("excel_label"),
+                                       logger=LoggerFactory(self.config).get_logger(logger_name="mit_loader"))
+        heaLoader_nsr = HeaLoader.load(nsrdb_path, self.config["preprocessing"].getint("NSR_DB_TAG"),
+                                       logger=LoggerFactory(self.config).get_logger(logger_name="nsr_loader"))
+        self.mitdb = ECGDataset.from_directory(mitdb_path, heaLoader_mit)
+        self.nsrdb = ECGDataset.from_directory(nsrdb_path, heaLoader_nsr)
 
     def split_dataset(self, mitdb: ECGDataset, nsrdb: ECGDataset):
         mitdb.shuffle()
@@ -26,8 +41,8 @@ class Preprocessor(Action):
         train_set.name = "training_set"
         return train_set, dev_set, test_set
 
-    def preprocess(self, mitdb: ECGDataset, nsrdb: ECGDataset):
-        train_set, dev_set, test_set = self.split_dataset(mitdb, nsrdb)
+    def preprocess(self):
+        train_set, dev_set, test_set = self.split_dataset(self.mitdb, self.nsrdb)
         self.experiment_env.add_key(
             **{d.name: d.save(self.experiment_env.output_dir) for d in [train_set, dev_set, test_set]})
         train_generator = BatchGenerator(train_set, self.config, enable_augmentation=True, logger="train_sequencer")
