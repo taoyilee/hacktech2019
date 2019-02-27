@@ -11,11 +11,8 @@ if __name__ == "__main__":
     config.read("config.ini")
     mitdb_path = config["mitdb"].get("dataset_path")
     record_files = glob.glob(os.path.join(mitdb_path, "*.hea"))
-    # record_files = record_files[:1]
     os.makedirs("plot", exist_ok=True)
     signal_length_sec = 10
-    # with Pool(4) as p:
-    #     p.map(RecordPNGPlotter(signal_length_sec, "mitdb"), record_files)
     with Pool(4) as p:
         data = p.map(RecordRR(signal_length_sec, "mitdb"), record_files)
 

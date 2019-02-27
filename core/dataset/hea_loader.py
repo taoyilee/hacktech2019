@@ -37,6 +37,10 @@ class HeaLoader(ABC):
     def get_record_segment(self, record_name, start_idx, ending_idx):
         pass
 
+    @abstractmethod
+    def get_label(self, record_name, start_idx, ending_idx):
+        pass
+
     def __getstate__(self):
         # Copy the object's state from self.__dict__ which contains
         # all our instance attributes. Always use the dict.copy()
@@ -74,6 +78,9 @@ class HeaLoaderFixedLabel(HeaLoader):
     def __repr__(self):
         return f"Fixed label loader using label: {self.label}"
 
+    def get_label(self, record_name, start_idx, ending_idx):
+        return self.label
+
 
 class HeaLoaderExcel(HeaLoader):
     def __init__(self, hea_directory, excel_path, logger=None):
@@ -86,53 +93,39 @@ class HeaLoaderExcel(HeaLoader):
         if not os.path.isfile(excel_path):
             raise FileNotFoundError(f"Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
+        self.data_dataframe_normal = self.label_dataframe.loc[~self.label_dataframe['Arrhythmia']]
+        self.logger.log(logging.DEBUG, f"Data frame normal:")
+        self.logger.log(logging.DEBUG, f"{self.data_dataframe_normal}")
 
-    def get_label(self, record, start_idx, ending_idx, default_label=0):
-        df = self.label_dataframe
-        roi = df.loc[(df['Record'] == int(record))]  # rows of interest
+    @lru_cache(maxsize=None)
+    def get_roi(self, record):
+        return self.data_dataframe_normal.loc[self.data_dataframe_normal['Record'] == int(record)]
+
+    def get_label(self, record, start_idx, ending_idx):
         self.logger.log(logging.DEBUG, f"Accessing {record} from sample {start_idx} to {ending_idx}")
-        self.logger.log(logging.DEBUG, "Rows of interest are: (showing first 10 rows if more rows are selected)")
-        self.logger.log(logging.DEBUG, roi.iloc[:, :4])
-        if len(roi) == 0:
-            return default_label
-        rows_start = roi.loc[roi['Start_Index'] <= start_idx]
-
-        self.logger.log(logging.DEBUG, rows_start.iloc[:, :4])
-        rows_end = roi.loc[ending_idx <= roi['End_Index']]
-        self.logger.log(logging.DEBUG, rows_end.iloc[:, :4])
-        srow = rows_start.iloc[0]
-        erow = rows_end.iloc[0]
-
-        for idx, row in rows_start.iterrows():
-            if srow['Start_Index'] < row['Start_Index']:
-                srow = row
-
-        for idx, row in rows_end.iterrows():
-            if erow['End_Index'] < row['End_Index']:
-                erow = row
-
-        if pd.DataFrame.equals(srow, erow):
-            if srow['Arrhythmia'] == True:
-                return 1
-            else:
-                return 0
+        roi = self.get_roi(record)
+        if len(roi) == 0:  # no normal frames selected
+            return 1
+        row_start = roi.loc[(roi['Start_Index'] <= start_idx) & (roi['End_Index'] >= start_idx)]
+        row_end = roi.loc[
+            (roi['Start_Index'] <= ending_idx) & (roi['End_Index'] >= ending_idx)]  # type: pd.DataFrame
+        row_between = roi.loc[
+            (roi['Start_Index'] >= start_idx) & (roi['End_Index'] <= ending_idx)]  # type: pd.DataFrame
+        row_relevant = row_start.append(row_between).append(row_end).drop_duplicates()
+        if len(row_relevant) == 0:
+            return 1
+        elif len(row_relevant) == 1:
+            return 0
         else:
-            start_row_idx = len(roi)
-            for idx, row in roi.iterrows():
-                if idx < start_row_idx:
-                    if row['Start_Index'] == srow['Start_Index']:
-                        start_row_idx = idx
-                if idx >= start_row_idx:
-                    if row['Arrhythmia'] == True:
-                        return 1
-                    if row['End_Index'] == erow['End_Index']:
-                        break
+            for rowi, rowj in zip(row_relevant.iloc[:-1].iterrows(),
+                                  row_relevant.iloc[1:].iterrows()):
+                if rowj[1].loc['Start_Index'] != rowi[1].loc['End_Index'] + 1:
+                    return 1
+            return 0
 
-        return 0
-
-    def get_record_segment(self, record_name, start_idx, ending_idx, default_label=0):
+    def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
-        label = self.get_label(record_name, start_idx, ending_idx, default_label)
+        label = self.get_label(record_name, start_idx, ending_idx)
         return record.p_signal[start_idx:ending_idx, :], label
 
     def __repr__(self):

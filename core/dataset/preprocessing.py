@@ -1,4 +1,5 @@
 import os
+from core.dataset.hea_loader import HeaLoader
 from os.path import join
 import glob
 import numpy as np
@@ -63,12 +64,22 @@ class ECGDataset:
 
 class ECGRecordTicket:
     _siglen = None
-    hea_loader = None
+    hea_loader = None  # type:HeaLoader
 
     def __init__(self):
         self.hea_file = ""
         self.label = None
         self.num_batches = 0
+
+    def get_label(self, start_idx, end_idx):
+        return self.hea_loader.get_label(self.record_name, start_idx, end_idx)
+
+    def get_signal(self, start_idx, end_idx):
+        return self.hea_loader.get_record(self.record_name).p_signal[start_idx:end_idx, :]
+
+    @property
+    def record_name(self):
+        return os.path.splitext(os.path.basename(self.hea_file))[0]
 
     @property
     def siglen(self) -> int:

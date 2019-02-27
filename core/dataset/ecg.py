@@ -4,7 +4,6 @@ from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
-from core.dataset.hea_loader import HeaLoaderExcel
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
 from core.util.logger import LoggerFactory
 import configparser as cp
@@ -48,7 +47,9 @@ class BatchGenerator(Sequence):
         self.logger.log(logging.INFO, f"Total # batches {sum(self.batch_numbers)}")
 
         self.record_dict = self.make_record_dict()
-        self.logger.log(logging.INFO, f"Record dictionary {self.record_dict}")
+        self.logger.log(logging.INFO, f"Record dictionary: ")
+        for k, v in self.record_dict.items():
+            self.logger.log(logging.INFO, f"{k}: {v}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_awgn"):
             self.awgn_augmenter = AWGNAugmenter(self.config["preprocessing"].getfloat("rms_noise_power_percent"))
@@ -74,6 +75,20 @@ class BatchGenerator(Sequence):
 
     def __len__(self):
         return sum(self.batch_numbers)
+
+    def dump_labels(self):
+        labels = []
+        for _, record_batch in self.record_dict.items():
+            local_batch_index, record_ticket = record_batch  # type: int, ECGRecordTicket
+            max_starting_idx = record_ticket.siglen - self.segment_length
+            self.logger.log(logging.DEBUG, f"max_starting_idx of {record_ticket} is {max_starting_idx}")
+            for i in range(self.batch_size):
+                self.logger.log(logging.DEBUG, f"local batch #{local_batch_index + i} of {record_ticket}")
+                starting_idx = min(max_starting_idx, (local_batch_index + i) * self.segment_length)
+                self.logger.log(logging.DEBUG, f"Starting index = {starting_idx}")
+                label = record_ticket.get_label(starting_idx, starting_idx + self.segment_length)
+                labels.append(label)
+        return np.array(labels)
 
     def __getitem__(self, idx):
         local_batch_index, record_ticket = self.record_dict[idx]  # type: int, ECGRecordTicket

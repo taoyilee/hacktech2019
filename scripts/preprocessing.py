@@ -1,7 +1,6 @@
 import configparser as cp
 import os
 import argparse
-
 from core.util.experiments import ExperimentEnv
 from core import Preprocessor
 from core import SequenceVisualizer
@@ -19,6 +18,9 @@ if __name__ == "__main__":
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_training(config)
     train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess()
-    sv = SequenceVisualizer(config, experiment_env)
-    sv.visualize(train_generator, batch_limit=None, segment_limit=15)
-    sv.visualize(dev_generator, batch_limit=None, segment_limit=15)
+
+    print(train_generator.dump_labels())
+    # print(dev_generator.dump_labels())
+    # sv = SequenceVisualizer(config, experiment_env)
+    # sv.visualize(train_generator, batch_limit=None, segment_limit=15)
+    # sv.visualize(dev_generator, batch_limit=None, segment_limit=15)
