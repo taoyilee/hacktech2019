@@ -50,20 +50,14 @@ class BatchGenerator(Sequence):
     rndscale_augmenter = None
     rnddc_augmenter = None
 
-    def read_siglen(self) -> Dict:
-        return_dict = {}
-        for ticket in self.dataset.tickets:
-            with open(ticket.hea_file) as myfile:
-                head = [next(myfile) for _ in range(1)]
-            sig_len = int(str.split(head[0])[0])
-            return_dict[ticket] = sig_len
-        return return_dict
-
     def compute_num_batches(self) -> List:
         return_list = []
         for ticket in self.dataset.tickets:
-            sig_len = self.siglen_each_record[ticket]
-            length = int(np.ceil(sig_len / self.segment_length / self.batch_size))
+            with open(ticket.hea_file) as myfile:
+                head = [next(myfile) for _ in range(1)]
+            ticket.siglen = int(str.split(head[0])[3])
+            length = int(np.ceil(ticket.siglen / self.segment_length / self.batch_size))
+            ticket.num_batches = length
             return_list.append(length)
         return return_list
 
@@ -91,7 +85,6 @@ class BatchGenerator(Sequence):
         self.batch_size = config["preprocessing"].getint("batch_size")
         self.logger.log(logging.INFO, f"Batch size is {self.batch_size}")
 
-        self.siglen_each_record = self.read_siglen()
         self.num_batch_each_record = self.compute_num_batches()
         self.logger.log(logging.INFO, f"Number of batches from each record are {self.num_batch_each_record}")
         self.logger.log(logging.INFO, f"Total # batches {sum(self.num_batch_each_record)}")
@@ -136,18 +129,15 @@ class BatchGenerator(Sequence):
         real_batch_size = int(np.ceil(batch_length / self.segment_length))
         batch_x = []
         labels = []
-        for b in range(real_batch_size - 1):
+        for b in range(real_batch_size):
             start_idx = local_batch_index * batch_length + b * self.segment_length
             ending_idx = start_idx + self.segment_length
+            if (start_idx > record_ticket.siglen) or (ending_idx > record_ticket.siglen):
+                start_idx -= abs(record_ticket.num_batches * batch_length-record_ticket.siglen)
+                ending_idx -= abs(record_ticket.num_batches * batch_length-record_ticket.siglen)
             segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
             batch_x.append(segment)
             labels.append(label)
-
-        start_idx = local_batch_index * batch_length + (real_batch_size - 2) * self.segment_length
-        ending_idx = start_idx + self.segment_length
-        segment, label = heaLoaderExcel.get_record_segment(record_name, start_idx, ending_idx)
-        batch_x.append(segment)
-        labels.append(label)
         batch_x = np.array(batch_x)
         labels = np.array(labels)
 
