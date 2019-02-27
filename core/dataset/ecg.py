@@ -99,19 +99,21 @@ class BatchGenerator(Sequence):
         real_batch_size = np.ceil((ending_idx - starting_idx) / self.segment_length).astype(int)
         self.logger.log(logging.DEBUG, f"Local batch index = {local_batch_index}")
         self.logger.log(logging.DEBUG, f"Batch #{idx} {starting_idx} - {ending_idx} RBS: {real_batch_size}")
+        self.logger.log(logging.DEBUG, f"Loading from record_name: {record_ticket.record_name}")
+        self.logger.log(logging.DEBUG, f"Hea Loader is {record_ticket.hea_loader}")
         batch_x = []
         labels = []
         for b in range(real_batch_size):
             b_start_idx = min(max_starting_idx, starting_idx + b * self.segment_length)
             b_ending_idx = min(record_ticket.siglen, b_start_idx + self.segment_length)
-            self.logger.log(logging.DEBUG, f"Slicing {record_ticket.record_name} {b_start_idx}:{b_ending_idx}")
+            # self.logger.log(logging.DEBUG, f"Slicing {record_ticket.record_name} {b_start_idx}:{b_ending_idx}")
             segment, label = record_ticket.hea_loader.get_record_segment(record_ticket.record_name, b_start_idx,
                                                                          b_ending_idx)
             batch_x.append(segment)
             labels.append(label)
         batch_x = np.array(batch_x)
         labels = np.array(labels)
-        self.logger.log(logging.DEBUG, f"{labels}")
+        self.logger.log(logging.DEBUG, f"Labels {labels}")
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
 
