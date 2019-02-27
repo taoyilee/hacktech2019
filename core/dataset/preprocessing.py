@@ -18,7 +18,7 @@ class ECGDataset:
         files = glob.glob(join(dataset_directory, "*.hea"))
         new_instance.tickets = [ECGRecordTicket.from_hea_filenames(hea_filename, label) for hea_filename in files]
 
-        #FIXME: for fast debugging
+        #DEBUG: for fast debugging
         #new_instance = new_instance[1:2]
 
         return new_instance
@@ -61,6 +61,8 @@ class ECGRecordTicket:
     def __init__(self):
         self.hea_file = ""
         self.label = None
+        self.siglen = 0
+        self.num_batches = 0
 
     @classmethod
     def from_hea_filenames(cls, hea, label):
