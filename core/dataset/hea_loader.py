@@ -93,35 +93,24 @@ class HeaLoaderExcel(HeaLoader):
         if not os.path.isfile(excel_path):
             raise FileNotFoundError(f"Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
-        self.data_dataframe_normal = self.label_dataframe.loc[~self.label_dataframe['Arrhythmia']]
-        self.logger.log(logging.DEBUG, f"Data frame normal:")
-        self.logger.log(logging.DEBUG, f"{self.data_dataframe_normal}")
 
     @lru_cache(maxsize=None)
     def get_roi(self, record):
-        return self.data_dataframe_normal.loc[self.data_dataframe_normal['Record'] == int(record)]
+        return self.label_dataframe.loc[self.label_dataframe['Record'] == int(record)]
 
     def get_label(self, record, start_idx, ending_idx):
         self.logger.log(logging.DEBUG, f"Accessing {record} from sample {start_idx} to {ending_idx}")
         roi = self.get_roi(record)
         if len(roi) == 0:  # no normal frames selected
-            return 1
+            raise ValueError(f"Record {record} is not found")
         row_start = roi.loc[(roi['Start_Index'] <= start_idx) & (roi['End_Index'] >= start_idx)]
         row_end = roi.loc[
             (roi['Start_Index'] <= ending_idx) & (roi['End_Index'] >= ending_idx)]  # type: pd.DataFrame
         row_between = roi.loc[
             (roi['Start_Index'] >= start_idx) & (roi['End_Index'] <= ending_idx)]  # type: pd.DataFrame
         row_relevant = row_start.append(row_between).append(row_end).drop_duplicates()
-        if len(row_relevant) == 0:
-            return 1
-        elif len(row_relevant) == 1:
-            return 0
-        else:
-            for rowi, rowj in zip(row_relevant.iloc[:-1].iterrows(),
-                                  row_relevant.iloc[1:].iterrows()):
-                if rowj[1].loc['Start_Index'] != rowi[1].loc['End_Index'] + 1:
-                    return 1
-            return 0
+        print(row_relevant["Arrhythmia"].any())
+        return 1 if row_relevant["Arrhythmia"].any() else 0
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
