@@ -16,12 +16,12 @@ class Preprocessor(Action):
     def init_ecg_datasets(self, logger=None):
         mitdb_path, nsrdb_path = self.config["mitdb"].get("dataset_path"), self.config["nsrdb"].get("dataset_path")
         if logger is None:
-            heaLoader_mit = HeaLoader.load(mitdb_path, self.config["mitdb"].get("excel_label"))
-            heaLoader_nsr = HeaLoader.load(nsrdb_path, self.config["preprocessing"].getint("NSR_DB_TAG"))
+            heaLoader_mit = HeaLoader.load(mitdb_path, self.config, self.config["mitdb"].get("excel_label"))
+            heaLoader_nsr = HeaLoader.load(nsrdb_path, self.config, self.config["preprocessing"].getint("NSR_DB_TAG"))
         else:
-            heaLoader_mit = HeaLoader.load(mitdb_path, self.config["mitdb"].get("excel_label"),
+            heaLoader_mit = HeaLoader.load(mitdb_path, self.config, self.config["mitdb"].get("excel_label"),
                                            logger=LoggerFactory(self.config).get_logger(logger_name="mit_loader"))
-            heaLoader_nsr = HeaLoader.load(nsrdb_path, self.config["preprocessing"].getint("NSR_DB_TAG"),
+            heaLoader_nsr = HeaLoader.load(nsrdb_path, self.config, self.config["preprocessing"].getint("NSR_DB_TAG"),
                                            logger=LoggerFactory(self.config).get_logger(logger_name="nsr_loader"))
         self.mitdb = ECGDataset.from_directory(mitdb_path, heaLoader_mit)
         self.nsrdb = ECGDataset.from_directory(nsrdb_path, heaLoader_nsr)

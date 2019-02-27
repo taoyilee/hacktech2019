@@ -48,24 +48,30 @@ class Trainer(Action):
                               verbose=self.config["RNN-train"].getint("verbosity"), mode='min',
                               cooldown=0, min_lr=1e-12),
             TensorBoard(log_dir=os.path.join(self.config["RNN-train"].get("tensorboard_dir"), self.experiment_env.tag))]
-        if self.config["RNN-train"].getboolean("early_stop"):
-            self.logger.log(logging.INFO, f"Early Stop enabled")
-            callbacks.append(EarlyStopping(monitor='roc_auc_val', min_delta=1e-8, patience=5, verbose=1, mode='max'))
-        else:
-            self.logger.log(logging.INFO, f"Early Stop disabled")
 
+        early_stop_criterion = 'val_loss'
         if self.config["RNN-train"].getboolean("auc_roc_cb"):
             self.logger.log(logging.INFO, f"ROC AUC Callback enabled")
+            early_stop_criterion = 'roc_auc_val'
             callbacks.append(ROCAUCCallback(training_set_generator, dev_set_generator))
         else:
             self.logger.log(logging.INFO, f"ROC AUC Callback disabled")
 
+        if self.config["RNN-train"].getboolean("early_stop"):
+            self.logger.log(logging.INFO, f"Early Stop enabled")
+            callbacks.append(
+                EarlyStopping(monitor=early_stop_criterion, min_delta=1e-8, patience=5, verbose=1, mode='max'))
+        else:
+            self.logger.log(logging.INFO, f"Early Stop disabled")
         return callbacks
 
     def train(self, training_set_generator, dev_set_generator):
         model = self.setup_model()
-        with open(os.path.join(self.experiment_env.output_dir, "model.json"), "w") as f:
+        json_file = os.path.join(self.experiment_env.output_dir, "model.json")
+        with open(json_file, "w") as f:
             f.write(model.to_json())
+            self.experiment_env.add_key(**{"model_json": json_file})
+
         training_steps = self.config["RNN-train"].getint("train_steps")
         training_steps = None if training_steps == 0 else training_steps
         self.logger.log(logging.INFO, f"Training step = {training_steps}")

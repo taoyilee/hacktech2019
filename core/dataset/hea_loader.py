@@ -11,22 +11,23 @@ class HeaLoader(ABC):
     signal = []
     hea_directory = ""
 
-    def __init__(self, hea_directory, label, logger=None):
+    def __init__(self, config, hea_directory, label, logger=None):
         """
 
         :param hea_directory: The directory which contains *.hea and *.dat
         :param label:  either 0, 1
         """
+        self.config = config
         self.logger = logger if logger is not None else LoggerFactory.dummy()
         self.label = label
         self.hea_directory = hea_directory
 
     @classmethod
-    def load(cls, hea_directory, label, logger=None):
+    def load(cls, config, hea_directory, label, logger=None):
         if isinstance(label, int):
-            return HeaLoaderFixedLabel(hea_directory, label, logger)
+            return HeaLoaderFixedLabel(config, hea_directory, label, logger)
         else:
-            return HeaLoaderExcel(hea_directory, label, logger)
+            return HeaLoaderExcel(config, hea_directory, label, logger)
 
     @lru_cache(maxsize=48)
     def get_record(self, record_name):
@@ -53,23 +54,17 @@ class HeaLoader(ABC):
     def __setstate__(self, state):
         # Restore instance attributes (i.e., filename and lineno).
         self.__dict__.update(state)
-        # Restore the previously opened file's state. To do so, we need to
-        # # reopen it and read from it until the line count is restored.
-        # file = open(self.filename)
-        # for _ in range(self.lineno):
-        #     file.readline()
-        # # Finally, save the file.
-        # self.file = file
+        self.logger = LoggerFactory.dummy()
 
 
 class HeaLoaderFixedLabel(HeaLoader):
-    def __init__(self, hea_directory, label, logger=None):
+    def __init__(self, config, hea_directory, label, logger=None):
         """
 
                 :param hea_directory: The directory which contains *.hea and *.dat
                 :param label:  either 0, 1
                 """
-        super(HeaLoaderFixedLabel, self).__init__(hea_directory, label, logger)
+        super(HeaLoaderFixedLabel, self).__init__(config, hea_directory, label, logger)
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
@@ -83,13 +78,13 @@ class HeaLoaderFixedLabel(HeaLoader):
 
 
 class HeaLoaderExcel(HeaLoader):
-    def __init__(self, hea_directory, excel_path, logger=None):
+    def __init__(self, config, hea_directory, excel_path, logger=None):
         """
 
                 :param hea_directory: The directory which contains *.hea and *.dat
                 :param excel_path:  an Excel spread sheet
                 """
-        super(HeaLoaderExcel, self).__init__(hea_directory, excel_path, logger)
+        super(HeaLoaderExcel, self).__init__(config, hea_directory, excel_path, logger)
         if not os.path.isfile(excel_path):
             raise FileNotFoundError(f"Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
@@ -109,7 +104,10 @@ class HeaLoaderExcel(HeaLoader):
         row_between = roi.loc[
             (roi['Start_Index'] >= start_idx) & (roi['End_Index'] <= ending_idx)]  # type: pd.DataFrame
         row_relevant = row_start.append(row_between).append(row_end).drop_duplicates()
-        return 1 if row_relevant["Arrhythmia"].any() else 0
+
+        arrhythmia_tag = self.config["preprocessing"].getint("MIT_DB_TAG")
+        normal_tag = self.config["preprocessing"].getint("NSR_DB_TAG")
+        return arrhythmia_tag if row_relevant["Arrhythmia"].any() else normal_tag
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
