@@ -109,7 +109,6 @@ class HeaLoaderExcel(HeaLoader):
         row_between = roi.loc[
             (roi['Start_Index'] >= start_idx) & (roi['End_Index'] <= ending_idx)]  # type: pd.DataFrame
         row_relevant = row_start.append(row_between).append(row_end).drop_duplicates()
-        print(row_relevant["Arrhythmia"].any())
         return 1 if row_relevant["Arrhythmia"].any() else 0
 
     def get_record_segment(self, record_name, start_idx, ending_idx):

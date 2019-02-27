@@ -42,6 +42,7 @@ class BatchGenerator(Sequence):
         self.batch_size = config["preprocessing"].getint("batch_size")
         self.logger.log(logging.INFO, f"Batch size is {self.batch_size}")
 
+        self.batch_length = self.batch_size * self.segment_length
         self.batch_numbers = np.ceil(self.dataset.record_len / self.segment_length / self.batch_size).astype(int)
         self.logger.log(logging.INFO, f"Number of batches from each record are {self.batch_numbers}")
         self.logger.log(logging.INFO, f"Total # batches {sum(self.batch_numbers)}")
@@ -92,25 +93,25 @@ class BatchGenerator(Sequence):
 
     def __getitem__(self, idx):
         local_batch_index, record_ticket = self.record_dict[idx]  # type: int, ECGRecordTicket
-        self.logger.log(logging.DEBUG, f"batch[{idx}] {local_batch_index} - {record_ticket}")
-        batch_length = self.segment_length * self.batch_size
-
-        record_name = os.path.splitext(os.path.basename(record_ticket.hea_file))[0]
-        real_batch_size = int(np.ceil(batch_length / self.segment_length))
+        max_starting_idx = record_ticket.siglen - self.segment_length
+        starting_idx = min(max_starting_idx, local_batch_index * self.batch_length)
+        ending_idx = min(record_ticket.siglen, starting_idx + self.segment_length * self.batch_size)
+        real_batch_size = np.ceil((ending_idx - starting_idx) / self.segment_length).astype(int)
+        self.logger.log(logging.DEBUG, f"Local batch index = {local_batch_index}")
+        self.logger.log(logging.DEBUG, f"Batch #{idx} {starting_idx} - {ending_idx} RBS: {real_batch_size}")
         batch_x = []
         labels = []
         for b in range(real_batch_size):
-            start_idx = local_batch_index * batch_length + b * self.segment_length
-            ending_idx = start_idx + self.segment_length
-            if (start_idx > record_ticket.siglen) or (ending_idx > record_ticket.siglen):
-                start_idx -= abs(record_ticket.num_batches * batch_length - record_ticket.siglen)
-                ending_idx -= abs(record_ticket.num_batches * batch_length - record_ticket.siglen)
-            segment, label = record_ticket.hea_loader.get_record_segment(record_name, start_idx, ending_idx)
+            b_start_idx = min(max_starting_idx, starting_idx + b * self.segment_length)
+            b_ending_idx = min(record_ticket.siglen, b_start_idx + self.segment_length)
+            self.logger.log(logging.DEBUG, f"Slicing {record_ticket.record_name} {b_start_idx}:{b_ending_idx}")
+            segment, label = record_ticket.hea_loader.get_record_segment(record_ticket.record_name, b_start_idx,
+                                                                         b_ending_idx)
             batch_x.append(segment)
             labels.append(label)
         batch_x = np.array(batch_x)
         labels = np.array(labels)
-
+        self.logger.log(logging.DEBUG, f"{labels}")
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
 

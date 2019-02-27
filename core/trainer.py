@@ -40,7 +40,6 @@ class Trainer(Action):
     def setup_callbacks(self, training_set_generator, dev_set_generator):
         print(f"*** Setting up callbacks ***")
         callbacks = [
-            ROCAUCCallback(training_set_generator, dev_set_generator),
             ModelCheckpoint(os.path.join(self.experiment_env.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss',
                             verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1),
             CSVLogger(os.path.join(self.experiment_env.output_dir, f"training.csv"), separator=',', append=False),
@@ -54,6 +53,12 @@ class Trainer(Action):
             callbacks.append(EarlyStopping(monitor='roc_auc_val', min_delta=1e-8, patience=5, verbose=1, mode='max'))
         else:
             self.logger.log(logging.INFO, f"Early Stop disabled")
+
+        if self.config["RNN-train"].getboolean("auc_roc_cb"):
+            self.logger.log(logging.INFO, f"ROC AUC Callback enabled")
+            callbacks.append(ROCAUCCallback(training_set_generator, dev_set_generator))
+        else:
+            self.logger.log(logging.INFO, f"ROC AUC Callback disabled")
 
         return callbacks
 

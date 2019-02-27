@@ -19,7 +19,10 @@ if __name__ == "__main__":
     experiment_env = ExperimentEnv.setup_training(config)
     train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess()
 
-    print(train_generator.dump_labels())
+    for b in train_generator:
+        print(b[0].shape, b[1].shape)
+
+    # print(train_generator.dump_labels())
     # print(dev_generator.dump_labels())
     # sv = SequenceVisualizer(config, experiment_env)
     # sv.visualize(train_generator, batch_limit=None, segment_limit=15)
