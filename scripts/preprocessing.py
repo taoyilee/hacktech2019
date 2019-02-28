@@ -1,4 +1,5 @@
 import configparser as cp
+import numpy as np
 import os
 import argparse
 from core.util.experiments import ExperimentEnv
@@ -22,8 +23,20 @@ if __name__ == "__main__":
     for b in train_generator:
         print(b[0].shape, b[1].shape)
 
-    # print(train_generator.dump_labels())
-    # print(dev_generator.dump_labels())
-    # sv = SequenceVisualizer(config, experiment_env)
-    # sv.visualize(train_generator, batch_limit=None, segment_limit=15)
-    # sv.visualize(dev_generator, batch_limit=None, segment_limit=15)
+    train_labels = train_generator.dump_labels()
+    dev_labels = dev_generator.dump_labels()
+
+    np.save("Train_labels.npy", train_labels)
+    np.save("Dev_labels.npy", dev_labels)
+    unique, counts = np.unique(train_generator.dump_labels(), return_counts=True)
+    print(unique)
+    print(counts)
+    print()
+    unique, counts = np.unique(dev_generator.dump_labels(), return_counts=True)
+    print(unique)
+    print(counts)
+    print()
+
+    """sv = SequenceVisualizer(config, experiment_env)
+    sv.visualize(train_generator, batch_limit=None, segment_limit=15)
+    sv.visualize(dev_generator, batch_limit=None, segment_limit=15)"""

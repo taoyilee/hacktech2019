@@ -103,6 +103,8 @@ class BatchGenerator(Sequence):
         self.logger.log(logging.DEBUG, f"Hea Loader is {record_ticket.hea_loader}")
         batch_x = []
         labels = []
+        b_start_array = [min(max_starting_idx, starting_idx + b * self.segment_length) for b in range(real_batch_size)]
+
         for b in range(real_batch_size):
             b_start_idx = min(max_starting_idx, starting_idx + b * self.segment_length)
             b_ending_idx = min(record_ticket.siglen, b_start_idx + self.segment_length)
@@ -126,4 +128,5 @@ class BatchGenerator(Sequence):
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
 
-        return batch_x, labels
+        return batch_x, labels, record_ticket.record_name, b_start_array
+

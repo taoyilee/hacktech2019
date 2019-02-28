@@ -70,6 +70,7 @@ class ECGRecordTicket:
         self.hea_file = ""
         self.label = None
         self.num_batches = 0
+        self.max_index = None
 
     def get_label(self, start_idx, end_idx):
         return self.hea_loader.get_label(self.record_name, start_idx, end_idx)
@@ -83,6 +84,9 @@ class ECGRecordTicket:
 
     @property
     def siglen(self) -> int:
+        if self.max_index is not None:
+            return self.max_index
+
         if self._siglen is None:
             with open(self.hea_file) as hea_fptr:
                 head = [next(hea_fptr) for _ in range(1)]

@@ -31,25 +31,33 @@ class SequenceVisualizer(Action):
         :return:
         """
         matplotlib.use('PDF')
-        pdf_out = os.path.join(self.experiment_env.output_dir, f"{dataset_generator.dataset.name}_view.pdf")
-        print(f"Writing pdf visualization to {pdf_out}")
-        with PdfPages(pdf_out) as pdf:
-            print(f"Total # of batches {len(dataset_generator)}")
-            for i, mini_batch in enumerate(dataset_generator):
-                if batch_limit is not None and i > batch_limit:
-                    break
-                x = mini_batch[0]
-                label = mini_batch[1]
-                for j in range(x.shape[0]):
-                    if segment_limit is not None and j > segment_limit:
+        pdf_out_0 = os.path.join(self.experiment_env.output_dir, f"{dataset_generator.dataset.name}_view_2.pdf")
+        pdf_out_1 = os.path.join(self.experiment_env.output_dir, f"{dataset_generator.dataset.name}_view_1.pdf")
+        print(f"Writing pdf visualization to {pdf_out_1}")
+        with PdfPages(pdf_out_1) as pdf_1:
+            with PdfPages(pdf_out_0) as pdf_0:
+                print(f"Total # of batches {len(dataset_generator)}")
+                for i, mini_batch in enumerate(dataset_generator):
+                    if batch_limit is not None and i > batch_limit:
                         break
-                    plt.plot(x[j, :, 0], label=f"Lead 1")
-                    plt.plot(x[j, :, 1], label=f"Lead 2")
-                    plt.title(f"{dataset_generator.dataset.name} minibatch #{i}, segment #{j} - label: {label[j]}")
-                    mitdb_tag = self.config["preprocessing"].get("MIT_DB_TAG")
-                    nsrdb_tag = self.config["preprocessing"].get("NSR_DB_TAG")
-                    plt.text(0, 0, f"MIT_DB: {mitdb_tag}; NSR_DB: {nsrdb_tag}")
-                    plt.grid()
-                    plt.legend()
-                    pdf.savefig()
-                    plt.close()
+                    x = mini_batch[0]
+                    label = mini_batch[1]
+                    record_name = mini_batch[2]
+                    start_index = mini_batch[3]
+                    for j in range(x.shape[0]):
+                        if segment_limit is not None and j > segment_limit:
+                            break
+                        plt.plot(x[j, :, 0], label=f"Lead 1")
+                        plt.plot(x[j, :, 1], label=f"Lead 2")
+                        plt.title(f"{dataset_generator.dataset.name} minibatch #{i}, segment #{j} - label: {label[j]}")
+                        mitdb_tag = self.config["preprocessing"].get("MIT_DB_TAG")
+                        nsrdb_tag = self.config["preprocessing"].get("NSR_DB_TAG")
+                        plt.text(0, 0, f"MIT_DB: {mitdb_tag}; NSR_DB: {nsrdb_tag}")
+                        plt.text(0, 0.5, f"Record_Name: {record_name}; Start_Index: {start_index[j]}")
+                        plt.grid()
+                        plt.legend()
+                        if label[j]==1:
+                            pdf_1.savefig()
+                        else:
+                            pdf_0.savefig()
+                        plt.close()

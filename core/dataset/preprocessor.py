@@ -37,6 +37,10 @@ class Preprocessor(Action):
         dev_slice = slice(None, dev_record_each)
         test_slice = slice(dev_record_each, dev_record_each + test_record_each)
         train_slice = slice(dev_record_each + test_record_each, None)
+        nsrdb_slice = nsrdb[dev_slice]
+        for ticket in nsrdb_slice.tickets:
+          ticket.max_index = int(ticket.siglen*.26) # .26 is how much of the signal we want to keep so we don't have an imbalanced dev set
+
         dev_set = mitdb[dev_slice] + nsrdb[dev_slice]  # type: ECGDataset
         dev_set.name = "development_set"
         test_set = mitdb[test_slice] + nsrdb[test_slice]  # type: ECGDataset

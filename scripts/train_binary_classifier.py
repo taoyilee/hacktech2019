@@ -22,8 +22,8 @@ if __name__ == "__main__":
 
     if config["RNN-train"].getboolean("plot_datasets"):
         sv = SequenceVisualizer(config, experiment_env)
-        sv.visualize(train_generator, batch_limit=None, segment_limit=15)
-        sv.visualize(dev_generator, batch_limit=None, segment_limit=15)
+        sv.visualize(train_generator, batch_limit=50, segment_limit=15)
+        sv.visualize(dev_generator, batch_limit=2, segment_limit=15)
 
     RNN_Trainer = Trainer(config, experiment_env, logger="trainer")
     RNN_Trainer.train(train_generator, dev_generator)
