@@ -7,10 +7,24 @@ from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
 from core.util.logger import LoggerFactory
 import configparser as cp
+import time
+from threading import Thread
 
 config = cp.ConfigParser()
 config.read("config.ini")
 
+
+def get_record_segment_thr(threadID, b_st, b_ed, max_starting_idx, segment_length,
+             starting_idx, record_ticket, batch_x, labels):
+    batch_x[threadID] = []
+    labels[threadID] = []
+    for b in range(b_st, b_ed):
+        b_start_idx = min(max_starting_idx, starting_idx + b * segment_length)
+        b_ending_idx = min(record_ticket.siglen, b_start_idx + segment_length)
+        segment, label = record_ticket.hea_loader.get_record_segment(record_ticket.record_name, b_start_idx,
+                                                                 b_ending_idx)
+        batch_x[threadID].append(segment)
+        labels[threadID].append(label)
 
 class BatchGenerator(Sequence):
     awgn_augmenter = None
@@ -103,8 +117,13 @@ class BatchGenerator(Sequence):
         self.logger.log(logging.DEBUG, f"Hea Loader is {record_ticket.hea_loader}")
         batch_x = []
         labels = []
+        num_threads = 4
+        batch_x_thr = [None] * num_threads
+        labels_thr =[None] * num_threads
         b_start_array = [min(max_starting_idx, starting_idx + b * self.segment_length) for b in range(real_batch_size)]
 
+        t_start = time.time()
+        """
         for b in range(real_batch_size):
             b_start_idx = min(max_starting_idx, starting_idx + b * self.segment_length)
             b_ending_idx = min(record_ticket.siglen, b_start_idx + self.segment_length)
@@ -113,6 +132,29 @@ class BatchGenerator(Sequence):
                                                                          b_ending_idx)
             batch_x.append(segment)
             labels.append(label)
+        """
+
+        # Create new threads
+        threads = [None] * num_threads
+        for t in range(len(threads)):
+            start_idx_thr = int((real_batch_size/num_threads) * t)
+            ending_idx_thr = int(real_batch_size/num_threads * (t+1))
+            print (start_idx_thr, ending_idx_thr)
+            threads[t] = Thread(target=get_record_segment_thr, args=(t, start_idx_thr, ending_idx_thr, max_starting_idx,
+                             self.segment_length, starting_idx, record_ticket, batch_x_thr, labels_thr))
+
+        for t in range(len(threads)):
+            threads[t].start()
+
+        for t in range(len(threads)):
+            threads[t].join()
+
+        for t in range(len(threads)):
+            batch_x += batch_x_thr[t]
+            labels += labels_thr[t]
+       # """
+
+        print(time.time()-t_start)
         batch_x = np.array(batch_x)
         labels = np.array(labels)
         self.logger.log(logging.DEBUG, f"Labels {labels}")
@@ -127,6 +169,5 @@ class BatchGenerator(Sequence):
 
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
-
         return batch_x, labels, record_ticket.record_name, b_start_array
 
