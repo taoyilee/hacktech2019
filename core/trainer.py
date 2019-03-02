@@ -1,4 +1,4 @@
-#from tensorflow.python.lib.io import file_io
+# from tensorflow.python.lib.io import file_io
 from keras.models import Sequential
 from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from keras import optimizers
@@ -8,7 +8,6 @@ from core.models.callbacks import ROCAUCCallback
 import logging
 from core.util.logger import LoggerFactory
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
-
 
 
 class Trainer(Action):
