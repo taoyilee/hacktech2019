@@ -1,3 +1,4 @@
+#from tensorflow.python.lib.io import file_io
 from keras.models import Sequential
 from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from keras import optimizers
@@ -7,6 +8,7 @@ from core.models.callbacks import ROCAUCCallback
 import logging
 from core.util.logger import LoggerFactory
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+
 
 
 class Trainer(Action):
@@ -73,3 +75,10 @@ class Trainer(Action):
         model.save(final_weights)
         self.logger.log(logging.INFO, f"Saving weights to {final_weights}")
         self.experiment_env.add_key(**{"final_weights": final_weights})
+
+    """def saveModelToCloud(self, model, job_dir, name='model'):
+        filename = name + '.h5'
+        model.save(filename)
+        with file_io.FileIO(filename, mode='r') as inputFile:
+            with file_io.FileIO(job_dir + '/' + filename, model='w+') as outFile:
+                outFile.write(inputFile.read())"""
