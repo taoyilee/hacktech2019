@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 # Setup parameters for Google Cloud ML Engine
-setup(name='core',
+setup(name='hacktech2019',
       version='0.1',
       packages=find_packages(),
       description='Test running training on gcloud',
