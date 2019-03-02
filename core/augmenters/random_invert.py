@@ -9,7 +9,7 @@ class RndInvertAugmenter(Augmenter):
 
     def augment(self, batch_x: np.ndarray):
         batch_aug = random.choices([batch_x, -batch_x], weights=[1 - self.invert_probability, self.invert_probability])
-        return batch_aug
+        return batch_aug[0]
 
     def __repr__(self):
         return f"Random Y-Inversion augmenter (invert_probability = {self.invert_probability})"
