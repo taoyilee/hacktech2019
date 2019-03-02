@@ -56,8 +56,8 @@ class ExperimentEnv:
 
     def setup_experiment(self):
         time_now = datetime.now()
-        self.runtime_parameters["tag"] = f"{random.getrandbits(40):010x}" + "_" + time_now.strftime("%m%d_%I%M%S")
-        print(f"Experiment tag is", self.runtime_parameters["tag"])
+        self.runtime_parameters["tag"] = str(random.getrandbits(40)) + "_" + time_now.strftime("%m%d_%I%M%S")
+        print("Experiment tag is", self.runtime_parameters["tag"])
         try:
             os.makedirs(self.tag2output_dir(self.runtime_parameters["tag"]))
         except FileExistsError:

@@ -31,4 +31,4 @@ class ROCAUCCallback(Callback):
     def on_epoch_end(self, epoch, logs={}):
         logs['roc_auc'] = computer_roc(self.model, self.y_train, self.train_generator)
         logs['roc_auc_val'] = computer_roc(self.model, self.y_val, self.validation_generator)
-        print(f"ROC_AUC(Training): {logs['roc_auc']:.2f} - ROC_AUC(Dev): {logs['roc_auc_val']:.2f}")
+        print("ROC_AUC(Training): ", (logs['roc_auc']), "ROC_AUC(Dev): ", logs['roc_auc_val'])
