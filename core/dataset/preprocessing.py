@@ -48,7 +48,7 @@ class ECGDataset:
             return pickle.load(f)
 
     def save(self, output_dir):
-        with open(os.path.join(output_dir, f"{self.name}.pickle"), 'wb') as f:
+        with open(os.path.join(output_dir, "%s.pickle" % self.name), 'wb') as f:
             pickle.dump(self, f)
         return os.path.join(output_dir, str(self.name), ".pickle")
 
@@ -68,7 +68,7 @@ class ECGRecordTicket:
         return new_instance
 
     def __repr__(self):
-        return f"{self.hea_file} {self.label}"
+        return "%s %s" % (self.hea_file, self.label)
 
 
 class ECGTaggedPair:
@@ -84,7 +84,7 @@ class ECGTaggedPair:
         return ECGTaggedPair(self.x[item], self.y[item], self.record_name)
 
     def __repr__(self):
-        return f"ECG Tagged Pair of size ({self.x.shape}, {self.y.shape}) from {self.record_name}"
+        return "ECG Tagged Pair of size (%s, %s) from %s" % (self.x.shape, self.y.shape, self.record_name)
 
     def get_segment(self, start, end):
         # TODO: some range check
