@@ -116,7 +116,7 @@ class RecordPlotter:
                     plt.xlabel("Time (s)")
                 plt.text(time[10], -1.5,
                          "fs = %d Hz signal_total_len = %.2f min. %d pts in this plot" % (
-                         record.fs, record.sig_len / record.fs / 60, samples_per_segment))
+                             record.fs, record.sig_len / record.fs / 60, samples_per_segment))
                 for i, cmt in enumerate(record.comments):
                     plt.text(time[10], -1.3 + 0.2 * i, cmt)
                 plt.subplot(record.n_sig + 1, 1, record.n_sig + 1)
@@ -147,7 +147,7 @@ class RecordPNGPlotter:
 
     def __call__(self, record_hea):
         record_name = os.path.splitext(record_hea)[0]
-        print(f"processing record {record_name}")
+        print("processing record", record_name)
         record = wfdb.io.rdrecord(record_name)
         samples_per_segment = int(self.signal_length_sec / (1 / record.fs))
 
@@ -162,7 +162,7 @@ class RecordPNGPlotter:
             arrythmia = False
             for i in range(record.n_sig):
                 signal = record.p_signal[subslice, i]
-                plt.plot(time, signal, label=f"{record.sig_name[i]}", color=colors[i])
+                plt.plot(time, signal, label=record.sig_name[i], color=colors[i])
                 out = ecg.ecg(signal=signal, sampling_rate=record.fs, show=False)
                 plt.scatter(time[out["rpeaks"]], signal[out["rpeaks"]])
                 rr_int = np.array(time[out["rpeaks"][1:]] - time[out["rpeaks"][:-1]])
