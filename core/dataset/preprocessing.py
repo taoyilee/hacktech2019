@@ -50,11 +50,11 @@ class ECGDataset:
         sliced_instance = ECGDataset()
         if isinstance(index, slice):
             sliced_instance.tickets = self.tickets[index]
-            sliced_instance.name = "{self.name}_{index.start}_{index.stop}"
+            sliced_instance.name = "%s_%d_%d" % (self.name, index.start, index.stop)
             return sliced_instance
         else:  # single element
             sliced_instance.tickets = [self.tickets[index]]
-            sliced_instance.name = "{self.name}_{index}"
+            sliced_instance.name = "%s_%d" % (self.name, index)
             return sliced_instance
 
     def __repr__(self):

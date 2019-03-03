@@ -49,6 +49,18 @@ class Preprocessor(Action):
         test_set.name = "test_set"
         train_set = mitdb[train_slice] + nsrdb[train_slice]  # type: ECGDataset
         train_set.name = "training_set"
+        print("Training Set")
+        for t in train_set:
+            for tt in t.tickets:
+                print(tt)
+        print("Dev Set")
+        for t in dev_set:
+            for tt in t.tickets:
+                print(tt)
+        print("Test Set")
+        for t in test_set:
+            for tt in t.tickets:
+                print(tt)
         return train_set, dev_set, test_set
 
     def preprocess(self):
