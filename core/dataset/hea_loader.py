@@ -33,7 +33,7 @@ class HeaLoader(ABC):
     @lru_cache(maxsize=48)
     def get_record(self, record_name):
         record_name = os.path.splitext(record_name)[0]
-        print(os.path.join(self.hea_directory, record_name + ".npy"))
+        #tprint(os.path.join(self.hea_directory, record_name + ".npy"))
         return np.load(os.path.join(self.hea_directory, record_name + ".npy"))
         # return wfdb.rdrecord(os.path.join(self.hea_directory, record_name))
 

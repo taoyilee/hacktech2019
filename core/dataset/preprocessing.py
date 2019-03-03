@@ -21,7 +21,7 @@ class ECGDataset:
     @classmethod
     def from_directory(cls, dataset_directory, hea_loader):
         new_instance = cls(name=os.path.split(dataset_directory)[1])
-        files = glob.glob(join(dataset_directory, "*.hea"))
+        files = glob.glob(join(dataset_directory, "*.npy"))
         new_instance.tickets = [ECGRecordTicket.from_hea_filenames(hea_filename, hea_loader) for hea_filename in
                                 files]
         return new_instance
@@ -88,9 +88,10 @@ class ECGRecordTicket:
             return self.max_index
 
         if self._siglen is None:
-            with open(self.hea_file) as hea_fptr:
-                head = [next(hea_fptr) for _ in range(1)]
-            self._siglen = int(str.split(head[0])[3])
+            #with open(self.hea_file) as hea_fptr:
+            #    head = [next(hea_fptr) for _ in range(1)]
+            self._siglen = np.load(self.hea_file).shape[0]
+            #self._siglen = int(str.split(head[0])[3])
         return self._siglen
 
     @classmethod
