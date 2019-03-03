@@ -1,10 +1,10 @@
-import glob
 import configparser as cp
 import os
 from multiprocessing import Pool
-from core.util.plotting import RecordPNGPlotterDF, RecordRR
+
 import pandas as pd
-import numpy as np
+
+from core.util.plotting import RecordPNGPlotterDF
 
 if __name__ == "__main__":
     config = cp.ConfigParser()

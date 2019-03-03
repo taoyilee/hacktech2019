@@ -1,13 +1,27 @@
-from keras.callbacks import Callback
 import os
+
+from keras.callbacks import Callback
 from sklearn.metrics import roc_auc_score
-import numpy as np
+
 from core.dataset.ecg import BatchGenerator
 
 
 def computer_roc(model, y, data_generator):
     roc_auc = roc_auc_score(y, model.predict_generator(data_generator, verbose=0))
     return roc_auc
+
+
+class EpochEnd(Callback):
+
+    def __init__(self, experiment_env):
+        super(EpochEnd, self).__init__()
+        self.experiment_env = experiment_env
+
+    def on_epoch_end(self, epoch, logs={}):
+        logs["lr"] = self.model.optimizer.lr
+        logs["epoch"] = epoch
+        self.experiment_env.add_key(**{"lr": self.model.optimizer.lr, "epoch": epoch})
+        self.experiment_env.write_json()
 
 
 class SaveModel(Callback):
@@ -18,7 +32,7 @@ class SaveModel(Callback):
         self.output_dir = output_dir
 
     def on_epoch_end(self, epoch, logs={}):
-        self.model.save(os.path.join(self.output_dir, "weights_",str(epoch),".h5"))
+        self.model.save(os.path.join(self.output_dir, "weights_", str(epoch), ".h5"))
 
 
 class ROCAUCCallback(Callback):

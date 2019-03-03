@@ -1,10 +1,11 @@
-import configparser as cp
-import numpy as np
-import os
 import argparse
-from core.util.experiments import ExperimentEnv
+import configparser as cp
+import os
+
+import numpy as np
+
 from core import Preprocessor
-from core import SequenceVisualizer
+from core.util.experiments import ExperimentEnv
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

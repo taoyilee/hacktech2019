@@ -21,7 +21,3 @@ if __name__ == "__main__":
     profile.add_function(HeaLoaderExcel.get_label)
     profile.enable_by_count()
     print(train_generator.dump_labels())
-    # print(dev_generator.dump_labels())
-    # sv = SequenceVisualizer(config, experiment_env)
-    # sv.visualize(train_generator, batch_limit=None, segment_limit=15)
-    # sv.visualize(dev_generator, batch_limit=None, segment_limit=15)

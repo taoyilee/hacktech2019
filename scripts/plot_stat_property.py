@@ -1,12 +1,6 @@
-import glob
-import configparser as cp
-import os
-from multiprocessing import Pool
-from core.util.plotting import RecordPNGPlotter, RecordRR
-import pandas as pd
-import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 if __name__ == "__main__":
     df = pd.read_excel("plot/mitdb_summary.xlsx")

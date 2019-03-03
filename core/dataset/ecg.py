@@ -2,7 +2,8 @@ import logging
 from typing import List, Dict
 from tensorflow.keras.utils import Sequence
 import numpy as np
-from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
+from core.dataset.preprocessor import ECGRecordTicket
+from core.dataset import ECGDataset
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
 from core.util.logger import LoggerFactory
 

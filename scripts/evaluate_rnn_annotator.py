@@ -1,15 +1,17 @@
-import os
-import matplotlib
-import numpy as np
 import configparser as cp
 import logging
-from keras.models import model_from_json
-from keras.models import Model
-from core.util.plotting import plotecg, plot_annotation
-from matplotlib.backends.backend_pdf import PdfPages
-from core.dataset.preprocessing import ECGDataset
+import os
+
+import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+from keras.models import Model
+from keras.models import model_from_json
+from matplotlib.backends.backend_pdf import PdfPages
+
+from core.dataset import ECGDataset
 from core.models.rnn import model_compiler
+from core.util.plotting import plotecg, plot_annotation
 
 matplotlib.use('PDF')
 logger = logging.getLogger('test')

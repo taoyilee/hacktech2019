@@ -1,1 +1,2 @@
-from .ecg import ECGDataset, BatchGenerator
+from .ecg import BatchGenerator
+from core.dataset.preprocessor import ECGDataset

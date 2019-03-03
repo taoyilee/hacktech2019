@@ -1,8 +1,9 @@
-import wfdb
 import configparser as cp
 import glob
 import os
+
 import numpy as np
+import wfdb
 
 if __name__ == "__main__":
     config = cp.ConfigParser()

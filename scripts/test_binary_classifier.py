@@ -1,17 +1,18 @@
-import configparser as cp
-from core.util.experiments import ExperimentEnv
-import os
-import numpy as np
 import argparse
-from core import Tester, SequenceVisualizer
-from core.dataset.preprocessing import ECGDataset
-from core.dataset import BatchGenerator
+import configparser as cp
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.metrics import roc_curve, roc_auc_score
+
+from core import Tester, SequenceVisualizer
+from core.dataset import BatchGenerator, ECGDataset
+from core.util.experiments import ExperimentEnv
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", type=str, help="configuration file")
+    parser.add_argument("-c", type=str, help="configuration file", default="config.ini")
     args = parser.parse_args()
     configuration_file = args.c
 
@@ -26,15 +27,12 @@ if __name__ == "__main__":
     train_set = ECGDataset.from_pickle(experiment_env.training_set)
     dev_set = ECGDataset.from_pickle(experiment_env.development_set)
     print(test_set)
-
     print(dev_set)
-
     print(train_set)
 
     if config["preprocessing"].getboolean("use_hea"):
         test_set.set_hea()
-    # test_set.fix_path(mitdb_root=config["mitdb"].get("dataset_npy_path"),
-    #                   nsrdb_root=config["nsrdb"].get("dataset_npy_path"))
+
     RNN_Tester = Tester(config, experiment_env, logger="tester")
 
     test_generator = BatchGenerator(test_set, config, enable_augmentation=False, logger="test_sequencer")
@@ -50,7 +48,6 @@ if __name__ == "__main__":
         np.save(os.path.join(experiment_env.output_dir, "yhat.npy"), yhat)
     else:
         yhat = np.load(os.path.join(experiment_env.output_dir, "yhat.npy"))
-    # y = np.array([j for i in test_generator for j in i[1].tolist()])[:, np.newaxis]
     yhat = yhat.squeeze()
     y = test_generator.dump_labels()
     print("Y shape:", y.shape)

@@ -1,4 +1,4 @@
-from core.dataset.preprocessing import ECGDataset
+from core.dataset import ECGDataset
 import pytest
 import configparser as cp
 

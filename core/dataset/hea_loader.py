@@ -95,7 +95,7 @@ class HeaLoaderExcel(HeaLoader):
                 """
         super(HeaLoaderExcel, self).__init__(config, hea_directory, excel_path, logger)
         if not os.path.isfile(excel_path):
-            raise FileNotFoundError("Excel spreadsheet {excel_path} is not found.")
+            raise FileNotFoundError("Excel spreadsheet %s is not found." % excel_path)
         self.label_dataframe = pd.read_excel(excel_path)
         self.use_hea = False
 

@@ -1,9 +1,10 @@
-import os
-from datetime import datetime
-import numpy as np
 import configparser
 import json
+import os
 import random
+from datetime import datetime
+
+import numpy as np
 
 
 class ExperimentEnv:
@@ -68,8 +69,19 @@ class ExperimentEnv:
         return self.runtime_parameters["final_weights"]
 
     @property
+    def resume_weights(self):
+        return self.config["RNN-train"].get("resume_weights")
+
+    @property
+    def resume(self):
+        return self.config["RNN-train"].getboolean("resume_training")
+
+    @property
     def model_json(self):
-        return self.runtime_parameters["model_json"]
+        if self.config["RNN-train"].getboolean("resume_training"):
+            return self.runtime_parameters["model_json"]
+        else:
+            return None
 
     @property
     def test_set(self):
@@ -82,7 +94,6 @@ class ExperimentEnv:
     @property
     def development_set(self):
         return self.runtime_parameters["development_set"]
-
 
     @property
     def tag(self):

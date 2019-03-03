@@ -1,14 +1,16 @@
-from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras import optimizers
-import os
-from core.action import Action
-from core.models.callbacks import ROCAUCCallback
 import logging
-from core.util.logger import LoggerFactory
-from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+import os
+
 import tensorflow as tf
-from tensorflow.keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from tensorflow.contrib.cluster_resolver import TPUClusterResolver
+from tensorflow.keras import optimizers
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+from tensorflow.keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
+from tensorflow.keras.models import Sequential, model_from_json
+
+from core.action import Action
+from core.models.callbacks import EpochEnd, ROCAUCCallback
+from core.util.logger import LoggerFactory
 
 
 class Trainer(Action):
@@ -21,42 +23,54 @@ class Trainer(Action):
         adam = optimizers.Adam(lr=self.config["RNN-train"].getfloat("initial_lr"))
         model.compile(loss='binary_crossentropy', optimizer=adam)
 
-    def setup_model(self):
-        print("*** Setting up deep learning model ***")
-        input_shape = (self.config["preprocessing"].getint("sequence_length"), 2)
-        model = Sequential()
-        model.add(Bidirectional(LSTM(self.config["RNN-train"].getint("rnn_output_features")), input_shape=input_shape))
-        model.add(Dropout(self.config["RNN-train"].getfloat("dropout")))
-        self.logger.log(logging.INFO, "Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
-        model.add(BatchNormalization())
-        model.add(Dense(1024, activation='relu'))
-        self.logger.log(logging.INFO, "Adding Dense layer @ {1024} neurons")
-        model.add(Dropout(self.config["RNN-train"].getfloat("dropout")))
-        self.logger.log(logging.INFO, "Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
-        model.add(BatchNormalization())
-        model.add(Dense(1, activation='sigmoid'))
+    def setup_model(self, model_json=None):
+        if model_json:
+            print("*** Thawing model from JSON ***")
+            with open(self.experiment_env.model_json, "r") as fptr:
+                json_string = fptr.read()
+            model = model_from_json(json_string)  # type:Model
+            model.load_weights(self.experiment_env.resume_weights)
+            adam = optimizers.Adam(lr=self.config["RNN-train"].getfloat("resume_lr"))
+            model.compile(loss='binary_crossentropy', optimizer=adam)
+            model.summary()
+        else:
+            print("*** Setting up deep learning model ***")
+            input_shape = (self.config["preprocessing"].getint("sequence_length"), 2)
+            model = Sequential()
+            model.add(
+                Bidirectional(LSTM(self.config["RNN-train"].getint("rnn_output_features")), input_shape=input_shape))
+            model.add(Dropout(self.config["RNN-train"].getfloat("dropout")))
+            self.logger.log(logging.INFO,
+                            "Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
+            model.add(BatchNormalization())
+            model.add(Dense(1024, activation='relu'))
+            self.logger.log(logging.INFO, "Adding Dense layer @ {1024} neurons")
+            model.add(Dropout(self.config["RNN-train"].getfloat("dropout")))
+            self.logger.log(logging.INFO,
+                            "Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
+            model.add(BatchNormalization())
+            model.add(Dense(1, activation='sigmoid'))
 
-        model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs)
-        model.summary()
-        json_file = os.path.join(self.experiment_env.output_dir, "model.json")
-        with open(json_file, "w") as f:
-            f.write(model.to_json())
-            self.experiment_env.add_key(**{"model_json": json_file})
+            model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs)
+            model.summary()
+            json_file = os.path.join(self.experiment_env.output_dir, "model.json")
+            with open(json_file, "w") as f:
+                f.write(model.to_json())
+                self.experiment_env.add_key(**{"model_json": json_file})
 
-        TPU_WORKER = os.environ['TPU_NAME']
+            if self.config["RNN-train"].getboolean("use_tpu"):
+                model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
+                    tf.contrib.cluster_resolver.TPUClusterResolver(
+                        tpu=TPUClusterResolver(tpu=[os.environ['TPU_NAME']]).get_master())))
 
-        if self.config["RNN-train"].getboolean("use_tpu"):
-            model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
-                tf.contrib.cluster_resolver.TPUClusterResolver(
-                    tpu=TPUClusterResolver(tpu=[os.environ['TPU_NAME']]).get_master())))
-
-        self.setup_optimizer(model)
+            self.setup_optimizer(model)
         return model
 
     def setup_callbacks(self, training_set_generator, dev_set_generator):
         print("*** Setting up callbacks ***")
         # ROCAUCCallback(training_set_generator, dev_set_generator),
         callbacks = [
+            EpochEnd(self.experiment_env),
             ModelCheckpoint(os.path.join(self.experiment_env.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss',
                             verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1),
             CSVLogger(os.path.join(self.experiment_env.output_dir, "training.csv"), separator=',', append=False),
@@ -82,8 +96,8 @@ class Trainer(Action):
             self.logger.log(logging.INFO, "Early Stop disabled")
         return callbacks
 
-    def train(self, training_set_generator, dev_set_generator):
-        model = self.setup_model()
+    def train(self, training_set_generator, dev_set_generator, model_json=None):
+        model = self.setup_model(model_json=model_json)
 
         training_steps = self.config["RNN-train"].getint("train_steps")
         training_steps = None if training_steps == 0 else training_steps

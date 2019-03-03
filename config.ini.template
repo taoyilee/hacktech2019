@@ -4,18 +4,10 @@ logdir = log
 experiments_dir = experiments
 
 [nsrdb]
-; use this path if you use hea
-dataset_path = /training/hea/nsrdb
-
-; use this path if you use numpy serialized format
-dataset_npy_path = /training/npy/nsrdb
+dataset_npy_path = dataset/nsrdb
 
 [mitdb]
-; use this path if you use hea
-dataset_path = /training/npy/mitdb
-
-; use this path if you use numpy serialized format
-dataset_npy_path = /training/npy/mitdb
+dataset_npy_path = dataset/mitdb
 excel_label = mitdb_labeled.xlsx
 
 [preprocessing]
@@ -50,9 +42,13 @@ dc = .2
 dc_prob = 0.5
 
 [RNN-train]
-use_tpu=True
+use_tpu = True
 plot_datasets = False
 train_steps = 0
+
+resume_training = False
+resume_json = 75c49d64d0_0227_121924/experiment_env.json
+resume_lr = 1e-4
 
 auc_roc_cb = False
 rnn_output_features = 32
