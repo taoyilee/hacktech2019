@@ -71,7 +71,7 @@ class HeaLoaderFixedLabel(HeaLoader):
         return record.p_signal[start_idx:ending_idx, :], self.label
 
     def __repr__(self):
-        return "Fixed label loader using label: {self.label}"
+        return "Fixed label loader using label: %s" % self.label
 
     def get_label(self, record_name, start_idx, ending_idx):
         return self.label
@@ -115,4 +115,4 @@ class HeaLoaderExcel(HeaLoader):
         return record.p_signal[start_idx:ending_idx, :], label
 
     def __repr__(self):
-        return "Excel HEA loader using {self.label}"
+        return "Excel HEA loader using %s" % self.label
