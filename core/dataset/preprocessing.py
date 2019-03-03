@@ -9,6 +9,12 @@ from typing import List
 
 
 class ECGDataset:
+    def fix_path(self, mitdb_root="", nsrdb_root=""):
+        for ticket in self.tickets:
+            if "mitdb" in ticket.hea_file:
+                ticket.hea_file = os.path.join(mitdb_root, os.path.splitext(os.path.split(ticket.hea_file)[1])[0])
+            if "nsrdb" in ticket.hea_file:
+                ticket.hea_file = os.path.join(nsrdb_root, os.path.splitext(os.path.split(ticket.hea_file)[1])[0])
 
     def __init__(self, name=""):
         self.tickets = []  # type:List[ECGRecordTicket]
@@ -88,10 +94,10 @@ class ECGRecordTicket:
             return self.max_index
 
         if self._siglen is None:
-            #with open(self.hea_file) as hea_fptr:
+            # with open(self.hea_file) as hea_fptr:
             #    head = [next(hea_fptr) for _ in range(1)]
             self._siglen = np.load(self.hea_file).shape[0]
-            #self._siglen = int(str.split(head[0])[3])
+            # self._siglen = int(str.split(head[0])[3])
         return self._siglen
 
     @classmethod

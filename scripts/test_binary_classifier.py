@@ -23,6 +23,9 @@ if __name__ == "__main__":
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_testing(config)
     test_set = ECGDataset.from_pickle(experiment_env.test_set)
+
+    test_set.fix_path(mitdb_root=config["mitdb"].get("dataset_npy_path"),
+                      nsrdb_root=config["nsrdb"].get("dataset_npy_path"))
     RNN_Tester = Tester(config, experiment_env, logger="tester")
 
     test_generator = BatchGenerator(test_set, config, enable_augmentation=False, logger="test_sequencer")
