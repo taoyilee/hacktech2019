@@ -1,8 +1,7 @@
 import configparser as cp
 import line_profiler
 import atexit
-from core.dataset.ecg import BatchGenerator
-from core.dataset import ECGDataset
+from core.dataset import ECGDataset, BatchGenerator
 
 from core.dataset.hea_loader import HeaLoader, HeaLoaderExcel
 
