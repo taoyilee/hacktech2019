@@ -31,12 +31,12 @@ class SequenceVisualizer(Action):
         :return:
         """
         matplotlib.use('PDF')
-        pdf_out_0 = os.path.join(self.experiment_env.output_dir, f"{dataset_generator.dataset.name}_view_2.pdf")
-        pdf_out_1 = os.path.join(self.experiment_env.output_dir, f"{dataset_generator.dataset.name}_view_1.pdf")
-        print(f"Writing pdf visualization to {pdf_out_1}")
+        pdf_out_0 = os.path.join(self.experiment_env.output_dir, "%s_view_0.pdf" % dataset_generator.dataset.name)
+        pdf_out_1 = os.path.join(self.experiment_env.output_dir, "%s_view_1.pdf" % dataset_generator.dataset.name)
+        print("Writing pdf visualization to", pdf_out_1)
         with PdfPages(pdf_out_1) as pdf_1:
             with PdfPages(pdf_out_0) as pdf_0:
-                print(f"Total # of batches {len(dataset_generator)}")
+                print("Total # of batches", len(dataset_generator))
                 for i, mini_batch in enumerate(dataset_generator):
                     if batch_limit is not None and i > batch_limit:
                         break
@@ -47,9 +47,11 @@ class SequenceVisualizer(Action):
                     for j in range(x.shape[0]):
                         if segment_limit is not None and j > segment_limit:
                             break
-                        plt.plot(x[j, :, 0], label=f"Lead 1")
-                        plt.plot(x[j, :, 1], label=f"Lead 2")
-                        plt.title(f"{dataset_generator.dataset.name} minibatch #{i}, segment #{j} - label: {label[j]}")
+                        plt.plot(x[j, :, 0], label="Lead 1")
+                        plt.plot(x[j, :, 1], label="Lead 2")
+                        plt.title(
+                            "%s minibatch #%d, segment #%d - label: %d" % (
+                            dataset_generator.dataset.name, i, j, label[j]))
                         mitdb_tag = self.config["preprocessing"].get("MIT_DB_TAG")
                         nsrdb_tag = self.config["preprocessing"].get("NSR_DB_TAG")
                         plt.text(0, 0, "MIT_DB: {mitdb_tag}; NSR_DB: {nsrdb_tag}")
