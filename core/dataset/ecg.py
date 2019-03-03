@@ -140,7 +140,6 @@ class BatchGenerator(Sequence):
         for t in range(len(threads)):
             start_idx_thr = int((real_batch_size / num_threads) * t)
             ending_idx_thr = int(real_batch_size / num_threads * (t + 1))
-            print(start_idx_thr, ending_idx_thr)
             threads[t] = Thread(target=get_record_segment_thr, args=(t, start_idx_thr, ending_idx_thr, max_starting_idx,
                                                                      self.segment_length, starting_idx, record_ticket,
                                                                      batch_x_thr, labels_thr))
@@ -156,7 +155,6 @@ class BatchGenerator(Sequence):
             labels += labels_thr[t]
         # """
 
-        print(time.time() - t_start)
         batch_x = np.array(batch_x)
         labels = np.array(labels)
         self.logger.log(logging.DEBUG, "Labels {labels}")
@@ -171,4 +169,4 @@ class BatchGenerator(Sequence):
 
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
-        return batch_x, labels, record_ticket.record_name, b_start_array
+        return batch_x, labels#, record_ticket.record_name, b_start_array
