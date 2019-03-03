@@ -78,12 +78,15 @@ class BatchGenerator(Sequence):
         for _, record_batch in self.record_dict.items():
             local_batch_index, record_ticket = record_batch  # type: int, ECGRecordTicket
             max_starting_idx = record_ticket.siglen - self.segment_length
-            self.logger.log(logging.DEBUG, "max_starting_idx of {record_ticket} is {max_starting_idx}")
-            for i in range(self.batch_size):
-                self.logger.log(logging.DEBUG, "local batch #{local_batch_index + i} of {record_ticket}")
-                starting_idx = min(max_starting_idx, (local_batch_index + i) * self.segment_length)
-                self.logger.log(logging.DEBUG, "Starting index = {starting_idx}")
-                label = record_ticket.get_label(starting_idx, starting_idx + self.segment_length)
+            starting_idx = min(max_starting_idx, local_batch_index * self.batch_length)
+            ending_idx = min(record_ticket.siglen, starting_idx + self.segment_length * self.batch_size)
+            max_starting_idx = record_ticket.siglen - self.segment_length
+            real_batch_size = np.ceil((ending_idx - starting_idx) / self.segment_length).astype(int)
+            for b in range(real_batch_size):
+                b_start_idx = min(max_starting_idx, starting_idx + b * self.segment_length)
+                b_ending_idx = min(record_ticket.siglen, b_start_idx + self.segment_length)
+                segment, label = record_ticket.hea_loader.get_record_segment(record_ticket.record_name, b_start_idx,
+                                                                             b_ending_idx)
                 labels.append(label)
         return np.array(labels)
 
