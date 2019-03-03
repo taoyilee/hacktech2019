@@ -1,4 +1,3 @@
-import os
 import logging
 from typing import List, Dict
 from tensorflow.keras.utils import Sequence
@@ -33,42 +32,42 @@ class BatchGenerator(Sequence):
 
         self.dataset = dataset
         self.segment_length = config["preprocessing"].getint("sequence_length")
-        self.logger.log(logging.INFO, "Sequence length is {self.segment_length}")
+        self.logger.log(logging.INFO, "Sequence length is %d" % self.segment_length)
 
         self.batch_size = config["preprocessing"].getint("batch_size")
-        self.logger.log(logging.INFO, "Batch size is {self.batch_size}")
+        self.logger.log(logging.INFO, "Batch size is %d" % self.batch_size)
 
         self.batch_length = self.batch_size * self.segment_length
         self.batch_numbers = np.ceil(self.dataset.record_len / self.segment_length / self.batch_size).astype(int)
-        self.logger.log(logging.INFO, "Number of batches from each record are {self.batch_numbers}")
-        self.logger.log(logging.INFO, "Total # batches {sum(self.batch_numbers)}")
+        self.logger.log(logging.INFO, "Number of batches from each record are %d" % self.batch_numbers)
+        self.logger.log(logging.INFO, "Total # batches %d", sum(self.batch_numbers))
 
         self.record_dict = self.make_record_dict()
         self.logger.log(logging.INFO, "Record dictionary: ")
         for k, v in self.record_dict.items():
-            self.logger.log(logging.INFO, "{k}: {v}")
+            self.logger.log(logging.INFO, "%s : %s" % (k, v))
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_awgn"):
             self.awgn_augmenter = AWGNAugmenter(self.config["preprocessing"].getfloat("rms_noise_power_percent"))
             self.logger.log(logging.DEBUG, "AWGN augmenter enabled")
-            self.logger.log(logging.DEBUG, "{self.awgn_augmenter}")
+            self.logger.log(logging.DEBUG, self.awgn_augmenter)
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndinvert"):
             self.rndinv_augmenter = RndInvertAugmenter(self.config["preprocessing"].getfloat("rndinvert_prob"))
             self.logger.log(logging.DEBUG, "Random inversion augmenter enabled")
-            self.logger.log(logging.DEBUG, "{self.rndinv_augmenter}")
+            self.logger.log(logging.DEBUG, self.rndinv_augmenter)
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndscale"):
             self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"),
                                                         self.config["preprocessing"].getfloat("scale_prob"))
             self.logger.log(logging.DEBUG, "Random scaling augmenter enabled")
-            self.logger.log(logging.DEBUG, "{self.rndscale_augmenter}")
+            self.logger.log(logging.DEBUG, self.rndscale_augmenter)
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rnddc"):
             self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"),
                                                   self.config["preprocessing"].getfloat("dc_prob"))
             self.logger.log(logging.DEBUG, "Random Dc augmenter enabled")
-            self.logger.log(logging.DEBUG, "{self.rnddc_augmenter}")
+            self.logger.log(logging.DEBUG, self.rnddc_augmenter)
 
     def __len__(self):
         return sum(self.batch_numbers)

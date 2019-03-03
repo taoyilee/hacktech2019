@@ -4,9 +4,17 @@ logdir = log
 experiments_dir = experiments
 
 [nsrdb]
+; use this path if you use hea
+dataset_path = /training/hea/nsrdb
+
+; use this path if you use numpy serialized format
 dataset_npy_path = /training/npy/nsrdb
 
 [mitdb]
+; use this path if you use hea
+dataset_path = /training/npy/mitdb
+
+; use this path if you use numpy serialized format
 dataset_npy_path = /training/npy/mitdb
 excel_label = mitdb_labeled.xlsx
 

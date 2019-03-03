@@ -14,7 +14,7 @@ if __name__ == "__main__":
         hea_base = os.path.split(hea_record)[1]
         record = wfdb.rdrecord(hea_record)
         signal = record.p_signal
-        np.save(f"dataset\mitdb\\{hea_base}.npy", signal)
+        np.save(os.path.join(mitdb_path, hea_base + ".npy"), signal)
 
     hea = glob.glob(os.path.join(nsrdb_path, "*.hea"))
     for h in hea:
@@ -22,4 +22,4 @@ if __name__ == "__main__":
         hea_base = os.path.split(hea_record)[1]
         record = wfdb.rdrecord(hea_record)
         signal = record.p_signal
-        np.save(f"dataset\\nsrdb\\{hea_base}.npy", signal)
+        np.save(os.path.join(nsrdb_path, hea_base + ".npy"), signal)
