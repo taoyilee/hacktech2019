@@ -40,6 +40,7 @@ if __name__ == "__main__":
     else:
         yhat = np.load(os.path.join(experiment_env.output_dir, "yhat.npy"))
     # y = np.array([j for i in test_generator for j in i[1].tolist()])[:, np.newaxis]
+    yhat = yhat.squeeze()
     y = test_generator.dump_labels()
     print("Y shape:", y.shape)
     print("Y hat shape:", yhat.shape)
