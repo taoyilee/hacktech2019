@@ -1,11 +1,5 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
-from tensorflow.keras import optimizers
-import os
 from core.action import Action
-import logging
 from core.util.logger import LoggerFactory
-from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 from tensorflow.keras.models import model_from_json, Model
 
 
