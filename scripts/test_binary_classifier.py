@@ -16,9 +16,9 @@ if __name__ == "__main__":
     configuration_file = args.c
 
     if os.path.isfile(configuration_file):
-        print(f"Using configuration file {configuration_file}")
+        print("Using configuration file",configuration_file)
     else:
-        raise FileNotFoundError(f"configuration file {configuration_file} dose not exist")
+        raise FileNotFoundError("configuration file",configuration_file, "dose not exist")
     config = cp.ConfigParser()
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_testing(config)
@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(10, 6))
     fpr, tpr, thresholds = roc_curve(y, yhat)
-    print(f"ROC AUC: {roc_auc_score(y, yhat):4f}")
+    print("ROC AUC:", roc_auc_score(y, yhat))
     plt.subplot(1, 2, 1)
     plt.plot(fpr, tpr, color='darkorange')
     plt.plot([0, 1], [0, 1], color='navy', linestyle='--')

@@ -1,12 +1,12 @@
-from keras.models import Sequential
-from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
-from keras import optimizers
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
+from tensorflow.keras import optimizers
 import os
 from core.action import Action
 import logging
 from core.util.logger import LoggerFactory
-from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
-from keras.models import model_from_json, Model
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+from tensorflow.keras.models import model_from_json, Model
 
 
 class Tester(Action):
