@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import List, Dict
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 import numpy as np
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
