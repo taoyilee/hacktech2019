@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import logging
 from abc import ABC, abstractmethod
 import wfdb
@@ -32,7 +33,9 @@ class HeaLoader(ABC):
     @lru_cache(maxsize=48)
     def get_record(self, record_name):
         record_name = os.path.splitext(record_name)[0]
-        return wfdb.rdrecord(os.path.join(self.hea_directory, record_name))
+        #tprint(os.path.join(self.hea_directory, record_name + ".npy"))
+        return np.load(os.path.join(self.hea_directory, record_name + ".npy"))
+        # return wfdb.rdrecord(os.path.join(self.hea_directory, record_name))
 
     @abstractmethod
     def get_record_segment(self, record_name, start_idx, ending_idx):
@@ -68,7 +71,7 @@ class HeaLoaderFixedLabel(HeaLoader):
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
-        return record.p_signal[start_idx:ending_idx, :], self.label
+        return record[start_idx:ending_idx, :], self.label
 
     def __repr__(self):
         return "Fixed label loader using label: %s" % self.label
@@ -112,7 +115,7 @@ class HeaLoaderExcel(HeaLoader):
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
         label = self.get_label(record_name, start_idx, ending_idx)
-        return record.p_signal[start_idx:ending_idx, :], label
+        return record[start_idx:ending_idx, :], label
 
     def __repr__(self):
         return "Excel HEA loader using %s" % self.label

@@ -4,10 +4,10 @@ logdir = log
 experiments_dir = experiments
 
 [nsrdb]
-dataset_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
+dataset_npy_path = /training/npy/nsrdb
 
 [mitdb]
-dataset_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
+dataset_npy_path = /training/npy/mitdb
 excel_label = mitdb_labeled.xlsx
 
 [preprocessing]
@@ -53,7 +53,7 @@ initial_lr = 0.001
 initial_weights = None
 model_output = trained_model/model.h5
 tensorboard_dir = tensorboard
-epochs = 15
+epochs = 50
 patientce_reduce_lr = 2
 early_stop = True
 verbosity = 1

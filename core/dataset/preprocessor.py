@@ -14,7 +14,8 @@ class Preprocessor(Action):
         self.init_ecg_datasets()
 
     def init_ecg_datasets(self, logger=None):
-        mitdb_path, nsrdb_path = self.config["mitdb"].get("dataset_path"), self.config["nsrdb"].get("dataset_path")
+        mitdb_path, nsrdb_path = self.config["mitdb"].get("dataset_npy_path"), self.config["nsrdb"].get(
+            "dataset_npy_path")
         if logger is None:
             heaLoader_mit = HeaLoader.load(self.config, mitdb_path, self.config["mitdb"].get("excel_label"))
             heaLoader_nsr = HeaLoader.load(self.config, nsrdb_path, self.config["preprocessing"].getint("NSR_DB_TAG"))
