@@ -74,7 +74,6 @@ class Trainer(Action):
         else:
             self.logger.log(logging.INFO, "ROC AUC Callback disabled")
 
-
         if self.config["RNN-train"].getboolean("early_stop"):
             self.logger.log(logging.INFO, "Early Stop enabled")
             callbacks.append(
@@ -94,7 +93,7 @@ class Trainer(Action):
                             validation_data=dev_set_generator,
                             epochs=self.config["RNN-train"].getint("epochs"), verbose=1,
                             callbacks=self.setup_callbacks(training_set_generator, dev_set_generator),
-                            class_weight={0: 1, 1: 5.88})
+                            class_weight={0: 1, 1: 5.88}, use_multiprocessing=True, workers=4)
         final_weights = os.path.join(self.experiment_env.output_dir, "final_weights.h5")
         model.save(final_weights)
         self.logger.log(logging.INFO, "Saving weights to {final_weights}")
