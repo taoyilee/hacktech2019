@@ -23,6 +23,13 @@ if __name__ == "__main__":
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_testing(config)
     test_set = ECGDataset.from_pickle(experiment_env.test_set)
+    train_set = ECGDataset.from_pickle(experiment_env.training_set)
+    dev_set = ECGDataset.from_pickle(experiment_env.development_set)
+    print(test_set)
+
+    print(dev_set)
+
+    print(train_set)
 
     if config["preprocessing"].getboolean("use_hea"):
         test_set.set_hea()

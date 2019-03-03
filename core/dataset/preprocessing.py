@@ -58,7 +58,7 @@ class ECGDataset:
             return sliced_instance
 
     def __repr__(self):
-        return "{self.name} has {self.__len__()} records"
+        return "%s has %d records" % (self.name, self.__len__())
 
     def __len__(self):
         return len(self.tickets)

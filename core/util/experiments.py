@@ -76,6 +76,15 @@ class ExperimentEnv:
         return self.runtime_parameters["test_set"]
 
     @property
+    def training_set(self):
+        return self.runtime_parameters["training_set"]
+
+    @property
+    def development_set(self):
+        return self.runtime_parameters["development_set"]
+
+
+    @property
     def tag(self):
         return self.runtime_parameters["tag"]
 
