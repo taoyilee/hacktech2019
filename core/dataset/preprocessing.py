@@ -38,15 +38,15 @@ class ECGDataset:
         sliced_instance = ECGDataset()
         if isinstance(index, slice):
             sliced_instance.tickets = self.tickets[index]
-            sliced_instance.name = f"{self.name}_{index.start}_{index.stop}"
+            sliced_instance.name = "{self.name}_{index.start}_{index.stop}"
             return sliced_instance
         else:  # single element
             sliced_instance.tickets = [self.tickets[index]]
-            sliced_instance.name = f"{self.name}_{index}"
+            sliced_instance.name = "{self.name}_{index}"
             return sliced_instance
 
     def __repr__(self):
-        return f"{self.name} has {self.__len__()} records"
+        return "{self.name} has {self.__len__()} records"
 
     def __len__(self):
         return len(self.tickets)
@@ -57,9 +57,9 @@ class ECGDataset:
             return pickle.load(f)
 
     def save(self, output_dir):
-        with open(os.path.join(output_dir, f"{self.name}.pickle"), 'wb') as f:
+        with open(os.path.join(output_dir, "%s.pickle" % self.name), 'wb') as f:
             pickle.dump(self, f)
-        return os.path.join(output_dir, f"{self.name}.pickle")
+        return os.path.join(output_dir, ".pickle" % self.name)
 
 
 class ECGRecordTicket:
@@ -101,7 +101,7 @@ class ECGRecordTicket:
         return new_instance
 
     def __repr__(self):
-        return f"{self.hea_file} {self.hea_loader}"
+        return "{self.hea_file} {self.hea_loader}"
 
 
 class ECGTaggedPair:
@@ -117,7 +117,7 @@ class ECGTaggedPair:
         return ECGTaggedPair(self.x[item], self.y[item], self.record_name)
 
     def __repr__(self):
-        return f"ECG Tagged Pair of size ({self.x.shape}, {self.y.shape}) from {self.record_name}"
+        return "ECG Tagged Pair of size ({self.x.shape}, {self.y.shape}) from {self.record_name}"
 
     def get_segment(self, start, end):
         # TODO: some range check

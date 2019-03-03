@@ -128,10 +128,10 @@ class RecordPlotter:
                     freq = freq[10:int(fft_pts / 2)]
                     spectrum = abs(spectrum) ** 2
                     spectrum /= np.max(spectrum)
-                    plt.plot(freq, spectrum, label=f"{record.sig_name[i]}", color=colors[i])
+                    plt.plot(freq, spectrum, label="{record.sig_name[i]}", color=colors[i])
                 plt.grid()
                 plt.xlim([1, 75])
-                plt.title(f"{self.ecg_database} Record #{record.record_name} Spectrum")
+                plt.title("{self.ecg_database} Record #{record.record_name} Spectrum")
                 plt.xlabel("Frequency (Hz)")
                 plt.ylabel("Relative Power")
                 plt.legend(loc="upper right")
@@ -168,13 +168,13 @@ class RecordPNGPlotter:
                 rr_int = np.array(time[out["rpeaks"][1:]] - time[out["rpeaks"][:-1]])
                 for rp_idx_a, rp_idx_b, rr in zip(out["rpeaks"][:-1], out["rpeaks"][1:], rr_int):
                     plt.hlines(signal[rp_idx_a], time[rp_idx_a], time[rp_idx_b])
-                    plt.text((time[rp_idx_a] + time[rp_idx_b]) / 2, signal[rp_idx_a], f"{rr:.2f}")
+                    plt.text((time[rp_idx_a] + time[rp_idx_b]) / 2, signal[rp_idx_a], "{rr:.2f}")
                 hrv_perc = np.round(100 * (rr_int / np.min(rr_int) - 1), 2)
                 if np.any(hrv_perc > 15):
                     arrythmia = True
                 plt.text(min(time), -1.5 + 0.5 * i, hrv_perc)
                 plt.ylabel("Voltage (mV)")
-                plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
+                plt.title("{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
                 plt.xticks(np.arange(min(time), max(time) + 1, 1))
                 plt.yticks(np.arange(-1.5, 2, 0.5))
                 for xx in np.arange(min(time), max(time), 0.2):
@@ -207,8 +207,8 @@ class RecordPNGPlotterDF:
 
     def __call__(self, data_frame):
         data_frame = data_frame[1]
-        record_path = os.path.join(self.mitdb_path, f"{data_frame['Record']}")
-        print(f"processing record {record_path}")
+        record_path = os.path.join(self.mitdb_path, "{data_frame['Record']}")
+        print("processing record {record_path}")
         record = wfdb.io.rdrecord(record_path)
         starting_idx = data_frame["Start_Index"]
         ending_idx = data_frame["End_Index"]
@@ -218,9 +218,9 @@ class RecordPNGPlotterDF:
         colors = ["red", "blue"]
         for i in range(record.n_sig):
             signal = record.p_signal[subslice, i]
-            plt.plot(time, signal, label=f"{record.sig_name[i]}", color=colors[i])
+            plt.plot(time, signal, label="{record.sig_name[i]}", color=colors[i])
             plt.ylabel("Voltage (mV)")
-            plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
+            plt.title("%s Record #%s %d-%d" % (self.ecg_database, self.ecg_database, subslice.start, subslice.stop))
             plt.xticks(np.arange(min(time), max(time) + 1, 1))
             plt.yticks(np.arange(-1.5, 2, 0.5))
             for xx in np.arange(min(time), max(time), 0.2):
@@ -265,7 +265,7 @@ class RecordRR:
 
     def __call__(self, record_hea):
         record_name = os.path.splitext(record_hea)[0]
-        print(f"processing record {record_name}")
+        print("processing record", record_name)
         record = wfdb.io.rdrecord(record_name)
         samples_per_segment = int(self.signal_length_sec / (1 / record.fs))
 

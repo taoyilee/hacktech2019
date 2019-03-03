@@ -71,7 +71,7 @@ class HeaLoaderFixedLabel(HeaLoader):
         return record.p_signal[start_idx:ending_idx, :], self.label
 
     def __repr__(self):
-        return f"Fixed label loader using label: {self.label}"
+        return "Fixed label loader using label: {self.label}"
 
     def get_label(self, record_name, start_idx, ending_idx):
         return self.label
@@ -86,7 +86,7 @@ class HeaLoaderExcel(HeaLoader):
                 """
         super(HeaLoaderExcel, self).__init__(config, hea_directory, excel_path, logger)
         if not os.path.isfile(excel_path):
-            raise FileNotFoundError(f"Excel spreadsheet {excel_path} is not found.")
+            raise FileNotFoundError("Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
 
     @lru_cache(maxsize=None)
@@ -94,10 +94,10 @@ class HeaLoaderExcel(HeaLoader):
         return self.label_dataframe.loc[self.label_dataframe['Record'] == int(record)]
 
     def get_label(self, record, start_idx, ending_idx):
-        self.logger.log(logging.DEBUG, f"Accessing {record} from sample {start_idx} to {ending_idx}")
+        self.logger.log(logging.DEBUG, "Accessing {record} from sample {start_idx} to {ending_idx}")
         roi = self.get_roi(record)
         if len(roi) == 0:  # no normal frames selected
-            raise ValueError(f"Record {record} is not found")
+            raise ValueError("Record {record} is not found")
         row_start = roi.loc[(roi['Start_Index'] <= start_idx) & (roi['End_Index'] >= start_idx)]
         row_end = roi.loc[
             (roi['Start_Index'] <= ending_idx) & (roi['End_Index'] >= ending_idx)]  # type: pd.DataFrame
@@ -115,4 +115,4 @@ class HeaLoaderExcel(HeaLoader):
         return record.p_signal[start_idx:ending_idx, :], label
 
     def __repr__(self):
-        return f"Excel HEA loader using {self.label}"
+        return "Excel HEA loader using {self.label}"

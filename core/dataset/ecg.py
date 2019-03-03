@@ -51,42 +51,42 @@ class BatchGenerator(Sequence):
 
         self.dataset = dataset
         self.segment_length = config["preprocessing"].getint("sequence_length")
-        self.logger.log(logging.INFO, f"Sequence length is {self.segment_length}")
+        self.logger.log(logging.INFO, "Sequence length is {self.segment_length}")
 
         self.batch_size = config["preprocessing"].getint("batch_size")
-        self.logger.log(logging.INFO, f"Batch size is {self.batch_size}")
+        self.logger.log(logging.INFO, "Batch size is {self.batch_size}")
 
         self.batch_length = self.batch_size * self.segment_length
         self.batch_numbers = np.ceil(self.dataset.record_len / self.segment_length / self.batch_size).astype(int)
-        self.logger.log(logging.INFO, f"Number of batches from each record are {self.batch_numbers}")
-        self.logger.log(logging.INFO, f"Total # batches {sum(self.batch_numbers)}")
+        self.logger.log(logging.INFO, "Number of batches from each record are {self.batch_numbers}")
+        self.logger.log(logging.INFO, "Total # batches {sum(self.batch_numbers)}")
 
         self.record_dict = self.make_record_dict()
-        self.logger.log(logging.INFO, f"Record dictionary: ")
+        self.logger.log(logging.INFO, "Record dictionary: ")
         for k, v in self.record_dict.items():
-            self.logger.log(logging.INFO, f"{k}: {v}")
+            self.logger.log(logging.INFO, "{k}: {v}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_awgn"):
             self.awgn_augmenter = AWGNAugmenter(self.config["preprocessing"].getfloat("rms_noise_power_percent"))
-            self.logger.log(logging.DEBUG, f"AWGN augmenter enabled")
-            self.logger.log(logging.DEBUG, f"{self.awgn_augmenter}")
+            self.logger.log(logging.DEBUG, "AWGN augmenter enabled")
+            self.logger.log(logging.DEBUG, "{self.awgn_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndinvert"):
             self.rndinv_augmenter = RndInvertAugmenter(self.config["preprocessing"].getfloat("rndinvert_prob"))
-            self.logger.log(logging.DEBUG, f"Random inversion augmenter enabled")
-            self.logger.log(logging.DEBUG, f"{self.rndinv_augmenter}")
+            self.logger.log(logging.DEBUG, "Random inversion augmenter enabled")
+            self.logger.log(logging.DEBUG, "{self.rndinv_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndscale"):
             self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"),
                                                         self.config["preprocessing"].getfloat("scale_prob"))
-            self.logger.log(logging.DEBUG, f"Random scaling augmenter enabled")
-            self.logger.log(logging.DEBUG, f"{self.rndscale_augmenter}")
+            self.logger.log(logging.DEBUG, "Random scaling augmenter enabled")
+            self.logger.log(logging.DEBUG, "{self.rndscale_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rnddc"):
             self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"),
                                                   self.config["preprocessing"].getfloat("dc_prob"))
-            self.logger.log(logging.DEBUG, f"Random Dc augmenter enabled")
-            self.logger.log(logging.DEBUG, f"{self.rnddc_augmenter}")
+            self.logger.log(logging.DEBUG, "Random Dc augmenter enabled")
+            self.logger.log(logging.DEBUG, "{self.rnddc_augmenter}")
 
     def __len__(self):
         return sum(self.batch_numbers)
@@ -96,11 +96,11 @@ class BatchGenerator(Sequence):
         for _, record_batch in self.record_dict.items():
             local_batch_index, record_ticket = record_batch  # type: int, ECGRecordTicket
             max_starting_idx = record_ticket.siglen - self.segment_length
-            self.logger.log(logging.DEBUG, f"max_starting_idx of {record_ticket} is {max_starting_idx}")
+            self.logger.log(logging.DEBUG, "max_starting_idx of {record_ticket} is {max_starting_idx}")
             for i in range(self.batch_size):
-                self.logger.log(logging.DEBUG, f"local batch #{local_batch_index + i} of {record_ticket}")
+                self.logger.log(logging.DEBUG, "local batch #{local_batch_index + i} of {record_ticket}")
                 starting_idx = min(max_starting_idx, (local_batch_index + i) * self.segment_length)
-                self.logger.log(logging.DEBUG, f"Starting index = {starting_idx}")
+                self.logger.log(logging.DEBUG, "Starting index = {starting_idx}")
                 label = record_ticket.get_label(starting_idx, starting_idx + self.segment_length)
                 labels.append(label)
         return np.array(labels)
@@ -111,10 +111,10 @@ class BatchGenerator(Sequence):
         starting_idx = min(max_starting_idx, local_batch_index * self.batch_length)
         ending_idx = min(record_ticket.siglen, starting_idx + self.segment_length * self.batch_size)
         real_batch_size = np.ceil((ending_idx - starting_idx) / self.segment_length).astype(int)
-        self.logger.log(logging.DEBUG, f"Local batch index = {local_batch_index}")
-        self.logger.log(logging.DEBUG, f"Batch #{idx} {starting_idx} - {ending_idx} RBS: {real_batch_size}")
-        self.logger.log(logging.DEBUG, f"Loading from record_name: {record_ticket.record_name}")
-        self.logger.log(logging.DEBUG, f"Hea Loader is {record_ticket.hea_loader}")
+        self.logger.log(logging.DEBUG, "Local batch index = {local_batch_index}")
+        self.logger.log(logging.DEBUG, "Batch #{idx} {starting_idx} - {ending_idx} RBS: {real_batch_size}")
+        self.logger.log(logging.DEBUG, "Loading from record_name: {record_ticket.record_name}")
+        self.logger.log(logging.DEBUG, "Hea Loader is {record_ticket.hea_loader}")
         batch_x = []
         labels = []
         num_threads = 4
@@ -157,7 +157,7 @@ class BatchGenerator(Sequence):
         print(time.time()-t_start)
         batch_x = np.array(batch_x)
         labels = np.array(labels)
-        self.logger.log(logging.DEBUG, f"Labels {labels}")
+        self.logger.log(logging.DEBUG, "Labels {labels}")
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
 

@@ -23,7 +23,7 @@ class SaveModel(Callback):
 
 class ROCAUCCallback(Callback):
     def __init__(self, train_generator: BatchGenerator, validation_generator: BatchGenerator):
-        print(f"Setting up ROC-AUC callback")
+        print("Setting up ROC-AUC callback")
         super(ROCAUCCallback, self).__init__()
         self.train_generator = train_generator
         self.validation_generator = validation_generator
