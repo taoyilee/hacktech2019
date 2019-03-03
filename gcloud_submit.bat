@@ -1,4 +1,4 @@
-set JOB_NAME="test_job18"
+set JOB_NAME="test_job19"
 set BUCKET_NAME=xecg_data
 set CLOUD_CONFIG=core/gcloudml-gpu.yaml
 set JOB_DIR=gs://%BUCKET_NAME%/jobs/%JOB_NAME%

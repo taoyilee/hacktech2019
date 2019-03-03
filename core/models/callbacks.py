@@ -17,7 +17,7 @@ class SaveModel(Callback):
         self.output_dir = output_dir
 
     def on_epoch_end(self, epoch, logs={}):
-        self.model.save(os.path.join(self.output_dir, f"weights_{epoch + 1:02d}.h5"))
+        self.model.save(os.path.join(self.output_dir, "weights_",str(epoch),".h5"))
 
 
 class ROCAUCCallback(Callback):
