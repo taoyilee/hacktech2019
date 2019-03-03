@@ -349,4 +349,6 @@ class BatchGenerator(Sequence):
 
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
+        print(batch_x.shape, label.shape)
+        #print(labels.shape)
         return batch_x, labels

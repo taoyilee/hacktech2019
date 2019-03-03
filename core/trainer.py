@@ -104,10 +104,9 @@ class Trainer(Action):
         self.logger.log(logging.INFO, "Training step = {training_steps}")
         model.fit_generator(generator=training_set_generator,
                             steps_per_epoch=training_steps,
-                            validation_data=dev_set_generator,
                             epochs=self.config["RNN-train"].getint("epochs"), verbose=1,
                             callbacks=self.setup_callbacks(training_set_generator, dev_set_generator),
-                            class_weight={0: 1, 1: 5.88}, use_multiprocessing=True, workers=4)
+                            class_weight={0: 1, 1: 5.88}, use_multiprocessing=False, workers=1)
         final_weights = os.path.join(self.experiment_env.output_dir, "final_weights.h5")
         model.save(final_weights)
         self.logger.log(logging.INFO, "Saving weights to {final_weights}")

@@ -1,5 +1,5 @@
 import os
-
+import tensorflow.keras.backend as K
 from keras.callbacks import Callback
 from sklearn.metrics import roc_auc_score
 
@@ -16,9 +16,9 @@ class EpochEnd(Callback):
         self.experiment_env = experiment_env
 
     def on_epoch_end(self, epoch, logs={}):
-        logs["lr"] = self.model.optimizer.lr
-        logs["epoch"] = epoch
-        self.experiment_env.add_key(**{"lr": self.model.optimizer.lr, "epoch": epoch})
+        logs["lr"] = str(K.eval(self.model.optimizer.lr))
+        logs["last_epoch"] = epoch
+        self.experiment_env.add_key(**{"lr": str(K.eval(self.model.optimizer.lr)), "last_epoch": epoch})
         self.experiment_env.write_json()
 
 
