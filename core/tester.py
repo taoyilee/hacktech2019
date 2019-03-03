@@ -2,6 +2,9 @@ from core.action import Action
 from core.util.logger import LoggerFactory
 from tensorflow.keras.models import model_from_json, Model
 from tensorflow.keras import optimizers
+import tensorflow as tf
+from tensorflow.contrib.cluster_resolver import TPUClusterResolver
+import os
 
 
 class Tester(Action):
@@ -18,6 +21,12 @@ class Tester(Action):
         adam = optimizers.Adam(lr=self.config["RNN-train"].getfloat("initial_lr"))
         model.compile(loss='binary_crossentropy', optimizer=adam)
         model.summary()
+
+        if self.config["RNN-train"].getboolean("use_tpu"):
+            model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
+                tf.contrib.cluster_resolver.TPUClusterResolver(
+                    tpu=TPUClusterResolver(tpu=[os.environ['TPU_NAME']]).get_master())))
+
         return model
 
     def predict(self, test_set_generator):
