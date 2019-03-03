@@ -16,4 +16,4 @@ class AWGNAugmenter(Augmenter):
         return batch_aug
 
     def __repr__(self):
-        return f"AWGN augmenter (rms_noise_power_ratio = {self.rms_noise_power_ratio})"
+        return "AWGN augmenter (rms_noise_power_ratio = %.2f" % self.rms_noise_power_ratio
