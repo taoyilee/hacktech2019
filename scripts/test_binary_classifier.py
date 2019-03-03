@@ -31,6 +31,10 @@ if __name__ == "__main__":
     RNN_Tester = Tester(config, experiment_env, logger="tester")
 
     test_generator = BatchGenerator(test_set, config, enable_augmentation=False, logger="test_sequencer")
+
+    for t in test_set:
+        for tt in t.tickets:
+            print(tt)
     if config["RNN-test"].getboolean("plot_datasets"):
         sv = SequenceVisualizer(config, experiment_env)
         sv.visualize(test_generator, batch_limit=None, segment_limit=15)
