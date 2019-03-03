@@ -41,6 +41,7 @@ dc = .2
 dc_prob = 0.5
 
 [RNN-train]
+use_tpu=True
 plot_datasets = False
 train_steps = 0
 

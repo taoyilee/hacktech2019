@@ -1,4 +1,4 @@
-set JOB_NAME="test_job_michael"
+set JOB_NAME=test_job_michael
 set BUCKET_NAME=xecg_data
 set JOB_DIR=gs://%BUCKET_NAME%/jobs/%JOB_NAME%
 set MODULE=scripts.train_gcp

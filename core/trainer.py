@@ -7,6 +7,8 @@ from core.models.callbacks import ROCAUCCallback
 import logging
 from core.util.logger import LoggerFactory
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+import tensorflow as tf
+from tensorflow.contrib.cluster_resolver import TPUClusterResolver
 
 
 class Trainer(Action):
@@ -34,6 +36,11 @@ class Trainer(Action):
         model.add(BatchNormalization())
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
+
+        if self.config["RNN-train"].getbolean("use_tpu"):
+            model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
+                tf.contrib.cluster_resolver.TPUClusterResolver(
+                    tpu=TPUClusterResolver(tpu=[os.environ['TPU_NAME']]).get_master())))
         self.setup_optimizer(model)
         return model
 
