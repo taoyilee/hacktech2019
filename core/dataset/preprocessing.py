@@ -117,7 +117,7 @@ class ECGRecordTicket:
         return new_instance
 
     def __repr__(self):
-        return "{self.hea_file} {self.hea_loader}"
+        return "%s %s" % (self.hea_file, self.hea_loader)
 
 
 class ECGTaggedPair:
