@@ -33,5 +33,6 @@ if __name__ == "__main__":
         sv.visualize(dev_generator, batch_limit=2, segment_limit=15)
 
     RNN_Trainer = Trainer(config, experiment_env, logger="trainer")
+    experiment_env.write_json()
     RNN_Trainer.train(train_generator, dev_generator, experiment_env.model_json)
     experiment_env.write_json()

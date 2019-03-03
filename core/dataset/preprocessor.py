@@ -82,6 +82,7 @@ class Preprocessor(Action):
             train_set, dev_set, test_set = self.split_dataset(self.mitdb, self.nsrdb)
             self.experiment_env.add_key(
                 **{d.name: d.save(self.experiment_env.output_dir) for d in [train_set, dev_set, test_set]})
+            self.experiment_env.write_json()
         train_generator = BatchGenerator(train_set, self.config, enable_augmentation=True, logger="train_sequencer")
         dev_generator = BatchGenerator(dev_set, self.config, enable_augmentation=False, logger="dev_sequencer")
         return train_generator, dev_generator
@@ -269,7 +270,7 @@ class BatchGenerator(Sequence):
 
         self.batch_length = self.batch_size * self.segment_length
         self.batch_numbers = np.ceil(self.dataset.record_len / self.segment_length / self.batch_size).astype(int)
-        self.logger.log(logging.INFO, "Number of batches from each record are %d" % self.batch_numbers)
+        self.logger.log(logging.INFO, "Number of batches from each record are %s" % self.batch_numbers)
         self.logger.log(logging.INFO, "Total # batches %d", sum(self.batch_numbers))
 
         self.record_dict = self.make_record_dict()
