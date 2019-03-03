@@ -1,4 +1,4 @@
-set JOB_NAME="test_job19"
+set JOB_NAME="test_job22"
 set BUCKET_NAME=xecg_data
 set CLOUD_CONFIG=core/gcloudml-gpu.yaml
 set JOB_DIR=gs://%BUCKET_NAME%/jobs/%JOB_NAME%
@@ -14,4 +14,6 @@ gcloud ml-engine jobs submit training %JOB_NAME%^
     --module-name %MODULE%^
     --job-dir %JOB_DIR%^
     --region %REGION%^
-    --runtime-version %RUNTIME%
+    --runtime-version %RUNTIME%^
+    -- ^
+    -c config.ini
