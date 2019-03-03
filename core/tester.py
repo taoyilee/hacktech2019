@@ -1,6 +1,7 @@
 from core.action import Action
 from core.util.logger import LoggerFactory
 from tensorflow.keras.models import model_from_json, Model
+from tensorflow.keras import optimizers
 
 
 class Tester(Action):
@@ -14,6 +15,8 @@ class Tester(Action):
             json_string = fptr.read()
         model = model_from_json(json_string)  # type:Model
         model.load_weights(self.experiment_env.final_weights)
+        adam = optimizers.Adam(lr=self.config["RNN-train"].getfloat("initial_lr"))
+        model.compile(loss='binary_crossentropy', optimizer=adam)
         model.summary()
         return model
 
