@@ -9,9 +9,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    df = pd.read_excel("plot/summary.xlsx")
+    df = pd.read_excel("plot/mitdb_summary.xlsx")
     print(df.keys())
     print(len(df))
+    print(df.loc[df["Max_RRi"].isna()])
     sns.distplot(df["Max_RRi"], label="Max_RRi", norm_hist=True)
     sns.distplot(df["Min_RRi"], label="Min_RRi", norm_hist=True)
     plt.grid()

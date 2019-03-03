@@ -270,5 +270,5 @@ class RecordRR:
         samples_per_segment = int(self.signal_length_sec / (1 / record.fs))
 
         subslice = [slice(starting_idx, min(starting_idx + samples_per_segment, record.sig_len)) for starting_idx in
-                    range(0, record.sig_len, samples_per_segment)]
+                    range(0, record.sig_len, samples_per_segment + 1)]
         return tuple(map(lambda x: process_slice(record, x), subslice))
