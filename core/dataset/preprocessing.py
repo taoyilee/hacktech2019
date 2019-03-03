@@ -59,7 +59,7 @@ class ECGDataset:
     def save(self, output_dir):
         with open(os.path.join(output_dir, "%s.pickle" % self.name), 'wb') as f:
             pickle.dump(self, f)
-        return os.path.join(output_dir, ".pickle" % self.name)
+        return os.path.join(output_dir, "%s.pickle" % self.name)
 
 
 class ECGRecordTicket:
