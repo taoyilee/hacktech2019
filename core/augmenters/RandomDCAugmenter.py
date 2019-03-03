@@ -12,6 +12,6 @@ class RndDCAugmenter(Augmenter):
         self.dc_prob = dc_prob
 
     def augment(self, batch_x: np.ndarray):
-        batch_aug = random.choices([batch_x, batch_x+self.dc],  weights=[1 - self.dc_prob, self.dc_prob])
+        batch_aug = random.choice([batch_x, batch_x+self.dc])
 
-        return batch_aug[0]
+        return batch_aug
