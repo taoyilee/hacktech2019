@@ -69,10 +69,15 @@ class HeaLoaderFixedLabel(HeaLoader):
                 :param label:  either 0, 1
                 """
         super(HeaLoaderFixedLabel, self).__init__(config, hea_directory, label, logger)
+        self.use_hea = False
 
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
-        return record[start_idx:ending_idx, :], self.label
+        if self.use_hea:
+            return record.p_signal[start_idx:ending_idx, :], self.label
+        else:
+            return record[start_idx:ending_idx, :], self.label
+        # return record[start_idx:ending_idx, :], self.label
 
     def __repr__(self):
         return "Fixed label loader using label: %s" % self.label
@@ -92,6 +97,7 @@ class HeaLoaderExcel(HeaLoader):
         if not os.path.isfile(excel_path):
             raise FileNotFoundError("Excel spreadsheet {excel_path} is not found.")
         self.label_dataframe = pd.read_excel(excel_path)
+        self.use_hea = False
 
     @lru_cache(maxsize=None)
     def get_roi(self, record):
@@ -116,7 +122,10 @@ class HeaLoaderExcel(HeaLoader):
     def get_record_segment(self, record_name, start_idx, ending_idx):
         record = self.get_record(record_name)
         label = self.get_label(record_name, start_idx, ending_idx)
-        return record[start_idx:ending_idx, :], label
+        if self.use_hea:
+            return record.p_signal[start_idx:ending_idx, :], label
+        else:
+            return record[start_idx:ending_idx, :], label
 
     def __repr__(self):
         return "Excel HEA loader using %s" % self.label
