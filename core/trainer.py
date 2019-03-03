@@ -1,13 +1,13 @@
-from keras.models import Sequential, Model
-from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
-from keras import optimizers
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras import optimizers
 import os
 from core.action import Action
 from core.models.callbacks import ROCAUCCallback
 import logging
 from core.util.logger import LoggerFactory
-from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
 import tensorflow as tf
+from tensorflow.keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from tensorflow.contrib.cluster_resolver import TPUClusterResolver
 
 
@@ -18,7 +18,7 @@ class Trainer(Action):
 
     def setup_optimizer(self, model):
         print("*** Adding optimizer to the model ***")
-        adam = optimizers.adam(lr=self.config["RNN-train"].getfloat("initial_lr"))
+        adam = optimizers.Adam(lr=self.config["RNN-train"].getfloat("initial_lr"))
         model.compile(loss='binary_crossentropy', optimizer=adam)
 
     def setup_model(self):
@@ -38,6 +38,10 @@ class Trainer(Action):
 
         model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs)
         model.summary()
+        json_file = os.path.join(self.experiment_env.output_dir, "model.json")
+        with open(json_file, "w") as f:
+            f.write(model.to_json())
+            self.experiment_env.add_key(**{"model_json": json_file})
 
         if self.config["RNN-train"].getboolean("use_tpu"):
             model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
@@ -68,6 +72,7 @@ class Trainer(Action):
         else:
             self.logger.log(logging.INFO, "ROC AUC Callback disabled")
 
+
         if self.config["RNN-train"].getboolean("early_stop"):
             self.logger.log(logging.INFO, "Early Stop enabled")
             callbacks.append(
@@ -78,10 +83,6 @@ class Trainer(Action):
 
     def train(self, training_set_generator, dev_set_generator):
         model = self.setup_model()
-        json_file = os.path.join(self.experiment_env.output_dir, "model.json")
-        with open(json_file, "w") as f:
-            f.write(model.to_json())
-            self.experiment_env.add_key(**{"model_json": json_file})
 
         training_steps = self.config["RNN-train"].getint("train_steps")
         training_steps = None if training_steps == 0 else training_steps
