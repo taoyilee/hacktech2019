@@ -39,8 +39,8 @@ if __name__ == "__main__":
         np.save(os.path.join(experiment_env.output_dir, "yhat.npy"), yhat)
     else:
         yhat = np.load(os.path.join(experiment_env.output_dir, "yhat.npy"))
-    y = np.array([j for i in test_generator for j in i[1].tolist()])[:, np.newaxis]
-
+    # y = np.array([j for i in test_generator for j in i[1].tolist()])[:, np.newaxis]
+    y = test_generator.dump_labels()
     plt.figure(figsize=(10, 6))
     fpr, tpr, thresholds = roc_curve(y, yhat)
     print("ROC AUC:", roc_auc_score(y, yhat))
