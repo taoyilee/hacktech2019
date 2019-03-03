@@ -11,9 +11,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     configuration_file = args.c
     if os.path.isfile(configuration_file):
-        print(f"Using configuration file {configuration_file}")
+        print("Using configuration file", configuration_file)
     else:
-        raise FileNotFoundError(f"configuration file {configuration_file} dose not exist")
+        raise FileNotFoundError("configuration file", configuration_file, "does not exist")
     config = cp.ConfigParser()
     config.read(configuration_file)
     experiment_env = ExperimentEnv.setup_training(config)

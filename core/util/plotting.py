@@ -98,7 +98,8 @@ class RecordPlotter:
                     plt.plot(time, record.p_signal[subslice, i], label=record.sig_name[i], color=colors[i])
 
                     plt.ylabel("Voltage (mV)")
-                    plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")
+                    plt.title(
+                        "%s Record #%s %d-%d" % (self.ecg_database, record.record_name, subslice.start, subslice.stop))
                     plt.xticks(np.arange(min(time), max(time) + 1, 1))
                     plt.yticks(np.arange(-1.5, 2, 0.5))
                     for xx in np.arange(min(time), max(time), 0.2):
@@ -114,7 +115,8 @@ class RecordPlotter:
                     plt.legend(loc="upper right")
                     plt.xlabel("Time (s)")
                 plt.text(time[10], -1.5,
-                         f"fs = {record.fs} Hz signal_total_len = {record.sig_len / record.fs / 60:.2f} min. {samples_per_segment} pts in this plot")
+                         "fs = %d Hz signal_total_len = %.2f min. %d pts in this plot" % (
+                         record.fs, record.sig_len / record.fs / 60, samples_per_segment))
                 for i, cmt in enumerate(record.comments):
                     plt.text(time[10], -1.3 + 0.2 * i, cmt)
                 plt.subplot(record.n_sig + 1, 1, record.n_sig + 1)

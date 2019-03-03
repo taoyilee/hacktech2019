@@ -17,7 +17,7 @@ class LoggerFactory:
             os.makedirs(self.config["DEFAULT"].get("logdir"))
         except FileExistsError:
             pass
-        fh = logging.FileHandler(os.path.join(self.config["DEFAULT"].get("logdir"), f"{logger_name}.log"), mode="w+")
+        fh = logging.FileHandler(os.path.join(self.config["DEFAULT"].get("logdir"), logger_name.log, mode="w+"))
         fh.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)

@@ -37,7 +37,7 @@ class ECGDataset:
         return sliced_instance[index]
 
     def __repr__(self):
-        return f"{self.name} has {self.__len__()} records"
+        return str(self.name) + " has" + str(self.__len__()) + "records"
 
     def __len__(self):
         return len(self.tickets)
@@ -50,7 +50,7 @@ class ECGDataset:
     def save(self, output_dir):
         with open(os.path.join(output_dir, f"{self.name}.pickle"), 'wb') as f:
             pickle.dump(self, f)
-        return os.path.join(output_dir, f"{self.name}.pickle")
+        return os.path.join(output_dir, str(self.name), ".pickle")
 
 
 class ECGRecordTicket:

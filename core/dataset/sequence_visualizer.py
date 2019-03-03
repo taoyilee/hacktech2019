@@ -15,7 +15,7 @@ class SequenceVisualizer(Action):
         for i, mini_batch in enumerate(dataset_generator):
             csv_out = os.path.join(self.experiment_env.output_dir,
                                    f"{dataset_generator.dataset.name}_batch_{i:03d}.csv")
-            print(f"Writing csv to {csv_out}")
+            print("Writing csv to", csv_out)
             x = mini_batch[0]  # type:np.ndarray
             x = x.reshape((x.shape[0], x.shape[1] * x.shape[2]))
             label = mini_batch[1][:, np.newaxis]  # type:np.ndarray
@@ -31,8 +31,8 @@ class SequenceVisualizer(Action):
         :return:
         """
         matplotlib.use('PDF')
-        pdf_out = os.path.join(self.experiment_env.output_dir, f"{dataset_generator.dataset.name}_view.pdf")
-        print(f"Writing pdf visualization to {pdf_out}")
+        pdf_out = os.path.join(self.experiment_env.output_dir, str(dataset_generator.dataset.name), "_view.pdf")
+        print("Writing pdf visualization to ", pdf_out)
         with PdfPages(pdf_out) as pdf:
             print(f"Total # of batches {len(dataset_generator)}")
             for i, mini_batch in enumerate(dataset_generator):
@@ -48,7 +48,7 @@ class SequenceVisualizer(Action):
                     plt.title(f"{dataset_generator.dataset.name} minibatch #{i}, segment #{j} - label: {label[j]}")
                     mitdb_tag = self.config["preprocessing"].get("MIT_DB_TAG")
                     nsrdb_tag = self.config["preprocessing"].get("NSR_DB_TAG")
-                    plt.text(0, 0, f"MIT_DB: {mitdb_tag}; NSR_DB: {nsrdb_tag}")
+                    plt.text(0, 0, "MIT_DB: "+str(mitdb_tag)+"; NSR_DB:"+ str(nsrdb_tag))
                     plt.grid()
                     plt.legend()
                     pdf.savefig()
