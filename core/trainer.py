@@ -37,12 +37,13 @@ class Trainer(Action):
         model.add(Dense(1, activation='sigmoid'))
         model.summary()
 
+        TPU_WORKER = os.environ['TPU_NAME']
+
         if self.config["RNN-train"].getboolean("use_tpu"):
-            model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
-                tf.contrib.cluster_resolver.TPUClusterResolver(
-                    tpu=TPUClusterResolver(tpu=[os.environ['TPU_NAME']]).get_master())))
-        self.setup_optimizer(model)
-        return model
+            tpu_model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
+                tf.contrib.cluster_resolver.TPUClusterResolver(TPUClusterResolver(TPU_WORKER))))
+        self.setup_optimizer(tpu_model)
+        return tpu_model
 
     def setup_callbacks(self, training_set_generator, dev_set_generator):
         print("*** Setting up callbacks ***")
