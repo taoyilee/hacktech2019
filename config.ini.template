@@ -11,6 +11,7 @@ dataset_npy_path = /training/npy/mitdb
 excel_label = mitdb_labeled.xlsx
 
 [preprocessing]
+use_hea = False
 NSR_DB_TAG = 0
 MIT_DB_TAG = 1
 
