@@ -1,4 +1,4 @@
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from keras import optimizers
 import os
@@ -35,12 +35,15 @@ class Trainer(Action):
         self.logger.log(logging.INFO, "Adding Dropout layer @dropout = {self.config['RNN-train'].getfloat('dropout')}")
         model.add(BatchNormalization())
         model.add(Dense(1, activation='sigmoid'))
+
+        model = tf.keras.Model(inputs=model.inputs, outputs=model.outputs)
         model.summary()
 
         if self.config["RNN-train"].getboolean("use_tpu"):
             model = tf.contrib.tpu.keras_to_tpu_model(model, strategy=tf.contrib.tpu.TPUDistributionStrategy(
                 tf.contrib.cluster_resolver.TPUClusterResolver(
                     tpu=TPUClusterResolver(tpu=[os.environ['TPU_NAME']]).get_master())))
+
         self.setup_optimizer(model)
         return model
 
