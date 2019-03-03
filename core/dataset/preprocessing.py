@@ -9,6 +9,10 @@ from typing import List
 
 
 class ECGDataset:
+    def set_hea(self):
+        for ticket in self.tickets:
+            ticket.use_hea = True
+
     def fix_path(self, mitdb_root="", nsrdb_root=""):
         for ticket in self.tickets:
             if "mitdb" in ticket.hea_file:
@@ -73,6 +77,7 @@ class ECGRecordTicket:
     hea_loader = None  # type:HeaLoader
 
     def __init__(self):
+        self.use_hea = False
         self.hea_file = ""
         self.label = None
         self.num_batches = 0
@@ -94,10 +99,12 @@ class ECGRecordTicket:
             return self.max_index
 
         if self._siglen is None:
-            # with open(self.hea_file) as hea_fptr:
-            #    head = [next(hea_fptr) for _ in range(1)]
-            self._siglen = np.load(self.hea_file).shape[0]
-            # self._siglen = int(str.split(head[0])[3])
+            if self.use_hea:
+                with open(self.hea_file) as hea_fptr:
+                    head = [next(hea_fptr) for _ in range(1)]
+                    self._siglen = int(str.split(head[0])[3])
+            else:
+                self._siglen = np.load(self.hea_file).shape[0]
         return self._siglen
 
     @classmethod
