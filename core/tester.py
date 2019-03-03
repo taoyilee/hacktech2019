@@ -15,7 +15,7 @@ class Tester(Action):
         self.logger = LoggerFactory(config).get_logger(logger_name=logger)
 
     def setup_model(self):
-        print(f"*** Thawing model from JSON ***")
+        print("*** Thawing model from JSON ***")
         with open(self.experiment_env.model_json, "r") as fptr:
             json_string = fptr.read()
         model = model_from_json(json_string)  # type:Model

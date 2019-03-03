@@ -12,4 +12,4 @@ class RndInvertAugmenter(Augmenter):
         return batch_aug[0]
 
     def __repr__(self):
-        return f"Random Y-Inversion augmenter (invert_probability = {self.invert_probability})"
+        return "Random Y-Inversion augmenter (invert_probability = %.2f)" % self.invert_probability

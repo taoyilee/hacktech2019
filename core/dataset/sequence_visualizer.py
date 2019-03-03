@@ -14,7 +14,7 @@ class SequenceVisualizer(Action):
     def csv(self, dataset_generator: BatchGenerator):
         for i, mini_batch in enumerate(dataset_generator):
             csv_out = os.path.join(self.experiment_env.output_dir,
-                                   f"{dataset_generator.dataset.name}_batch_{i:03d}.csv")
+                                   "%s_batch_%03d.csv" % (dataset_generator.dataset.name, i))
             print("Writing csv to", csv_out)
             x = mini_batch[0]  # type:np.ndarray
             x = x.reshape((x.shape[0], x.shape[1] * x.shape[2]))
@@ -31,25 +31,35 @@ class SequenceVisualizer(Action):
         :return:
         """
         matplotlib.use('PDF')
-        pdf_out = os.path.join(self.experiment_env.output_dir, str(dataset_generator.dataset.name), "_view.pdf")
-        print("Writing pdf visualization to ", pdf_out)
-        with PdfPages(pdf_out) as pdf:
-            print(f"Total # of batches {len(dataset_generator)}")
-            for i, mini_batch in enumerate(dataset_generator):
-                if batch_limit is not None and i > batch_limit:
-                    break
-                x = mini_batch[0]
-                label = mini_batch[1]
-                for j in range(x.shape[0]):
-                    if segment_limit is not None and j > segment_limit:
+        pdf_out_0 = os.path.join(self.experiment_env.output_dir, "%s_view_0.pdf" % dataset_generator.dataset.name)
+        pdf_out_1 = os.path.join(self.experiment_env.output_dir, "%s_view_1.pdf" % dataset_generator.dataset.name)
+        print("Writing pdf visualization to", pdf_out_1)
+        with PdfPages(pdf_out_1) as pdf_1:
+            with PdfPages(pdf_out_0) as pdf_0:
+                print("Total # of batches", len(dataset_generator))
+                for i, mini_batch in enumerate(dataset_generator):
+                    if batch_limit is not None and i > batch_limit:
                         break
-                    plt.plot(x[j, :, 0], label=f"Lead 1")
-                    plt.plot(x[j, :, 1], label=f"Lead 2")
-                    plt.title(f"{dataset_generator.dataset.name} minibatch #{i}, segment #{j} - label: {label[j]}")
-                    mitdb_tag = self.config["preprocessing"].get("MIT_DB_TAG")
-                    nsrdb_tag = self.config["preprocessing"].get("NSR_DB_TAG")
-                    plt.text(0, 0, "MIT_DB: "+str(mitdb_tag)+"; NSR_DB:"+ str(nsrdb_tag))
-                    plt.grid()
-                    plt.legend()
-                    pdf.savefig()
-                    plt.close()
+                    x = mini_batch[0]
+                    label = mini_batch[1]
+                    record_name = mini_batch[2]
+                    start_index = mini_batch[3]
+                    for j in range(x.shape[0]):
+                        if segment_limit is not None and j > segment_limit:
+                            break
+                        plt.plot(x[j, :, 0], label="Lead 1")
+                        plt.plot(x[j, :, 1], label="Lead 2")
+                        plt.title(
+                            "%s minibatch #%d, segment #%d - label: %d" % (
+                            dataset_generator.dataset.name, i, j, label[j]))
+                        mitdb_tag = self.config["preprocessing"].get("MIT_DB_TAG")
+                        nsrdb_tag = self.config["preprocessing"].get("NSR_DB_TAG")
+                        plt.text(0, 0, "MIT_DB: {mitdb_tag}; NSR_DB: {nsrdb_tag}")
+                        plt.text(0, 0.5, "Record_Name: {record_name}; Start_Index: {start_index[j]}")
+                        plt.grid()
+                        plt.legend()
+                        if label[j] == 1:
+                            pdf_1.savefig()
+                        else:
+                            pdf_0.savefig()
+                        plt.close()

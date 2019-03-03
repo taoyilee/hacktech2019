@@ -8,6 +8,7 @@ dataset_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
 
 [mitdb]
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
+excel_label = mitdb_labeled.xlsx
 
 [preprocessing]
 NSR_DB_TAG = 0
@@ -18,8 +19,8 @@ dev_record_each = 2
 ; Take 5 records from MIT_DB/NSR_DB to build test set
 test_record_each = 5
 
-batch_size = 512
-sequence_length = 1300
+batch_size = 256
+sequence_length = 3600
 overlap_percent = 5
 
 random_time_scale_percent = 20
@@ -28,14 +29,14 @@ dilation_factor = 1
 enable_awgn = True
 rms_noise_power_percent = 3
 
-enable_rndinvert = False
+enable_rndinvert = True
 rndinvert_prob = 0.5
 
 enable_rndscale = False
 scale = 1.2
 scale_prob = 0.5
 
-enable_rnddc = True
+enable_rnddc = False
 dc = .2
 dc_prob = 0.5
 
@@ -43,6 +44,7 @@ dc_prob = 0.5
 plot_datasets = False
 train_steps = 0
 
+auc_roc_cb = False
 rnn_output_features = 32
 l2_regularization = 0
 dropout = 0.2
@@ -50,12 +52,12 @@ initial_lr = 0.001
 initial_weights = None
 model_output = trained_model/model.h5
 tensorboard_dir = tensorboard
-epochs = 100
+epochs = 15
 patientce_reduce_lr = 2
 early_stop = True
 verbosity = 1
 
 [RNN-test]
 plot_datasets = False
-experiment_env_tag = 7Xa9GShsje_0224_035758
+experiment_env_tag = 75c49d64d0_0227_121924
 batch_size = 32

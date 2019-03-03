@@ -3,41 +3,28 @@ import logging
 from typing import List, Dict
 from keras.utils import Sequence
 import numpy as np
-import random
-import wfdb
-from scipy.signal import resample
 from core.dataset.preprocessing import ECGRecordTicket, ECGDataset
 from core.augmenters import AWGNAugmenter, RndInvertAugmenter, RndScaleAugmenter, RndDCAugmenter
 from core.util.logger import LoggerFactory
+import configparser as cp
+import time
+from threading import Thread
+
+config = cp.ConfigParser()
+config.read("config.ini")
 
 
-class ECGAnnotatedSequenceAugmented(Sequence):
-
-    def __init__(self, dataset: List["ECGTaggedPair"], random_time_scale_percent=20, sequence_length=1300,
-                 total_training_segments=512, awgn_rms_percent=2, batch_size=32):
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self.random_time_scale = random_time_scale_percent
-        self.sequence_length = sequence_length
-        self.total_training_segments = total_training_segments
-        self.awgn_ratio = awgn_rms_percent / 100
-
-    def __len__(self):
-        return self.total_training_segments
-
-    def __getitem__(self, idx):
-        original_seq_length = [int(self.sequence_length * random.uniform(1 - self.random_time_scale / 100,
-                                                                         1 + self.random_time_scale / 100)) for _ in
-                               range(self.batch_size)]
-        raw_sequences = [random.choice(self.dataset).get_random_segment(seq_len) for seq_len in original_seq_length]
-        batch_x = np.array([resample(r.x, self.sequence_length) for r in raw_sequences])
-        batch_x_rms = np.sqrt(np.mean(batch_x ** 2, axis=1))
-        noise = np.random.normal(0, self.awgn_ratio * batch_x_rms,
-                                 (self.sequence_length, batch_x_rms.shape[0], batch_x_rms.shape[1])).swapaxes(0, 1)
-        batch_x = batch_x + noise
-        batch_y = [resample(r.y, self.sequence_length) for r in raw_sequences]
-        return batch_x, np.array(batch_y)
-
+def get_record_segment_thr(threadID, b_st, b_ed, max_starting_idx, segment_length,
+             starting_idx, record_ticket, batch_x, labels):
+    batch_x[threadID] = []
+    labels[threadID] = []
+    for b in range(b_st, b_ed):
+        b_start_idx = min(max_starting_idx, starting_idx + b * segment_length)
+        b_ending_idx = min(record_ticket.siglen, b_start_idx + segment_length)
+        segment, label = record_ticket.hea_loader.get_record_segment(record_ticket.record_name, b_start_idx,
+                                                                 b_ending_idx)
+        batch_x[threadID].append(segment)
+        labels[threadID].append(label)
 
 class BatchGenerator(Sequence):
     awgn_augmenter = None
@@ -45,21 +32,11 @@ class BatchGenerator(Sequence):
     rndscale_augmenter = None
     rnddc_augmenter = None
 
-    def compute_num_batches(self) -> List:
-        return_list = []
-        for ticket in self.dataset.tickets:
-            with open(ticket.hea_file) as myfile:
-                head = [next(myfile) for _ in range(1)]
-            sig_len = int(str.split(head[0])[0])
-            length = int(np.ceil(sig_len / self.segment_length / self.batch_size))
-            return_list.append(length)
-        return return_list
-
     def make_record_dict(self) -> Dict:
         rec_dict = {}
-        for i in range(len(self.num_batch_each_record)):
-            rec_dict.update({k + sum(self.num_batch_each_record[:i]): (k, self.dataset.tickets[i]) for k in
-                             range(self.num_batch_each_record[i])})
+        for i in range(len(self.batch_numbers)):
+            rec_dict.update({k + sum(self.batch_numbers[:i]): (k, self.dataset.tickets[i]) for k in
+                             range(self.batch_numbers[i])})
         return rec_dict
 
     def __init__(self, dataset: ECGDataset, config, enable_augmentation=False, logger=None):
@@ -73,71 +50,124 @@ class BatchGenerator(Sequence):
         self.logger = LoggerFactory(config).get_logger(logger_name=logger)
 
         self.dataset = dataset
-
         self.segment_length = config["preprocessing"].getint("sequence_length")
-        self.logger.log(logging.INFO, "Sequence length is", str(self.segment_length))
+        self.logger.log(logging.INFO, "Sequence length is {self.segment_length}")
 
         self.batch_size = config["preprocessing"].getint("batch_size")
-        self.logger.log(logging.INFO, "Batch size is", str(self.batch_size))
+        self.logger.log(logging.INFO, "Batch size is {self.batch_size}")
 
-        self.num_batch_each_record = self.compute_num_batches()
-        self.logger.log(logging.INFO, "Number of batches from each record are", str(self.num_batch_each_record))
-        self.logger.log(logging.INFO, "Total # batches", str(sum(self.num_batch_each_record)))
+        self.batch_length = self.batch_size * self.segment_length
+        self.batch_numbers = np.ceil(self.dataset.record_len / self.segment_length / self.batch_size).astype(int)
+        self.logger.log(logging.INFO, "Number of batches from each record are {self.batch_numbers}")
+        self.logger.log(logging.INFO, "Total # batches {sum(self.batch_numbers)}")
 
         self.record_dict = self.make_record_dict()
+        self.logger.log(logging.INFO, "Record dictionary: ")
+        for k, v in self.record_dict.items():
+            self.logger.log(logging.INFO, "{k}: {v}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_awgn"):
             self.awgn_augmenter = AWGNAugmenter(self.config["preprocessing"].getfloat("rms_noise_power_percent"))
             self.logger.log(logging.DEBUG, "AWGN augmenter enabled")
-            self.logger.log(logging.DEBUG, str(self.awgn_augmenter))
+            self.logger.log(logging.DEBUG, "{self.awgn_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndinvert"):
             self.rndinv_augmenter = RndInvertAugmenter(self.config["preprocessing"].getfloat("rndinvert_prob"))
             self.logger.log(logging.DEBUG, "Random inversion augmenter enabled")
-            self.logger.log(logging.DEBUG, str(self.rndinv_augmenter))
+            self.logger.log(logging.DEBUG, "{self.rndinv_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rndscale"):
-            self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"), self.config["preprocessing"].getfloat("scale_prob"))
+            self.rndscale_augmenter = RndScaleAugmenter(self.config["preprocessing"].getfloat("scale"),
+                                                        self.config["preprocessing"].getfloat("scale_prob"))
             self.logger.log(logging.DEBUG, "Random scaling augmenter enabled")
-            self.logger.log(logging.DEBUG, str(self.rndscale_augmenter))
+            self.logger.log(logging.DEBUG, "{self.rndscale_augmenter}")
 
         if enable_augmentation and self.config["preprocessing"].getboolean("enable_rnddc"):
-            self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"), self.config["preprocessing"].getfloat("dc_prob"))
+            self.rnddc_augmenter = RndDCAugmenter(self.config["preprocessing"].getfloat("dc"),
+                                                  self.config["preprocessing"].getfloat("dc_prob"))
             self.logger.log(logging.DEBUG, "Random Dc augmenter enabled")
-            self.logger.log(logging.DEBUG, str(self.rnddc_augmenter))
+            self.logger.log(logging.DEBUG, "{self.rnddc_augmenter}")
 
     def __len__(self):
-        return sum(self.num_batch_each_record)
+        return sum(self.batch_numbers)
+
+    def dump_labels(self):
+        labels = []
+        for _, record_batch in self.record_dict.items():
+            local_batch_index, record_ticket = record_batch  # type: int, ECGRecordTicket
+            max_starting_idx = record_ticket.siglen - self.segment_length
+            self.logger.log(logging.DEBUG, "max_starting_idx of {record_ticket} is {max_starting_idx}")
+            for i in range(self.batch_size):
+                self.logger.log(logging.DEBUG, "local batch #{local_batch_index + i} of {record_ticket}")
+                starting_idx = min(max_starting_idx, (local_batch_index + i) * self.segment_length)
+                self.logger.log(logging.DEBUG, "Starting index = {starting_idx}")
+                label = record_ticket.get_label(starting_idx, starting_idx + self.segment_length)
+                labels.append(label)
+        return np.array(labels)
 
     def __getitem__(self, idx):
         local_batch_index, record_ticket = self.record_dict[idx]  # type: int, ECGRecordTicket
-        batch_length = self.segment_length * self.batch_size
-        signal = wfdb.rdrecord(os.path.splitext(record_ticket.hea_file)[0]).p_signal[
-                 local_batch_index * batch_length:(local_batch_index + 1) * batch_length]
-        real_batch_size = int(np.ceil(len(signal) / self.segment_length))
-        batch_x = [signal[b * self.segment_length:(b + 1) * self.segment_length] for b in range(real_batch_size - 1)]
-        batch_x.append(signal[(real_batch_size - 2) * self.segment_length:(real_batch_size - 1) * self.segment_length])
+        max_starting_idx = record_ticket.siglen - self.segment_length
+        starting_idx = min(max_starting_idx, local_batch_index * self.batch_length)
+        ending_idx = min(record_ticket.siglen, starting_idx + self.segment_length * self.batch_size)
+        real_batch_size = np.ceil((ending_idx - starting_idx) / self.segment_length).astype(int)
+        self.logger.log(logging.DEBUG, "Local batch index = {local_batch_index}")
+        self.logger.log(logging.DEBUG, "Batch #{idx} {starting_idx} - {ending_idx} RBS: {real_batch_size}")
+        self.logger.log(logging.DEBUG, "Loading from record_name: {record_ticket.record_name}")
+        self.logger.log(logging.DEBUG, "Hea Loader is {record_ticket.hea_loader}")
+        batch_x = []
+        labels = []
+        num_threads = 4
+        batch_x_thr = [None] * num_threads
+        labels_thr =[None] * num_threads
+        b_start_array = [min(max_starting_idx, starting_idx + b * self.segment_length) for b in range(real_batch_size)]
+
+        t_start = time.time()
+        """
+        for b in range(real_batch_size):
+            b_start_idx = min(max_starting_idx, starting_idx + b * self.segment_length)
+            b_ending_idx = min(record_ticket.siglen, b_start_idx + self.segment_length)
+            # self.logger.log(logging.DEBUG, f"Slicing {record_ticket.record_name} {b_start_idx}:{b_ending_idx}")
+            segment, label = record_ticket.hea_loader.get_record_segment(record_ticket.record_name, b_start_idx,
+                                                                         b_ending_idx)
+            batch_x.append(segment)
+            labels.append(label)
+        """
+
+        # Create new threads
+        threads = [None] * num_threads
+        for t in range(len(threads)):
+            start_idx_thr = int((real_batch_size/num_threads) * t)
+            ending_idx_thr = int(real_batch_size/num_threads * (t+1))
+            print (start_idx_thr, ending_idx_thr)
+            threads[t] = Thread(target=get_record_segment_thr, args=(t, start_idx_thr, ending_idx_thr, max_starting_idx,
+                             self.segment_length, starting_idx, record_ticket, batch_x_thr, labels_thr))
+
+        for t in range(len(threads)):
+            threads[t].start()
+
+        for t in range(len(threads)):
+            threads[t].join()
+
+        for t in range(len(threads)):
+            batch_x += batch_x_thr[t]
+            labels += labels_thr[t]
+       # """
+
+        print(time.time()-t_start)
         batch_x = np.array(batch_x)
-
-
+        labels = np.array(labels)
+        self.logger.log(logging.DEBUG, "Labels {labels}")
         if self.awgn_augmenter is not None:
             batch_x = self.awgn_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
         if self.rndinv_augmenter is not None:
             batch_x = self.rndinv_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
         if self.rndscale_augmenter is not None:
-
             batch_x = self.rndscale_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
 
         if self.rnddc_augmenter is not None:
             batch_x = self.rnddc_augmenter.augment(batch_x)
-            batch_x = np.array(batch_x)
-
-
-
-        return batch_x, np.array([record_ticket.label for _ in range(real_batch_size)])
+        return batch_x, labels, record_ticket.record_name, b_start_array
 

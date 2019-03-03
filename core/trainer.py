@@ -1,4 +1,3 @@
-#from tensorflow.python.lib.io import file_io
 from keras.models import Sequential
 from keras.layers import LSTM, BatchNormalization, Dropout, Dense, Bidirectional
 from keras import optimizers
@@ -8,7 +7,6 @@ from core.models.callbacks import ROCAUCCallback
 import logging
 from core.util.logger import LoggerFactory
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping, TensorBoard, CSVLogger, ModelCheckpoint
-
 
 
 class Trainer(Action):
@@ -41,8 +39,8 @@ class Trainer(Action):
 
     def setup_callbacks(self, training_set_generator, dev_set_generator):
         print("*** Setting up callbacks ***")
+        # ROCAUCCallback(training_set_generator, dev_set_generator),
         callbacks = [
-            ROCAUCCallback(training_set_generator, dev_set_generator),
             ModelCheckpoint(os.path.join(self.experiment_env.output_dir, "weights.{epoch:02d}.h5"), monitor='val_loss',
                             verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1),
             CSVLogger(os.path.join(self.experiment_env.output_dir, "training.csv"), separator=',', append=False),
@@ -51,18 +49,30 @@ class Trainer(Action):
                               verbose=self.config["RNN-train"].getint("verbosity"), mode='min',
                               cooldown=0, min_lr=1e-12),
             TensorBoard(log_dir=os.path.join(self.config["RNN-train"].get("tensorboard_dir"), self.experiment_env.tag))]
+
+        early_stop_criterion = 'val_loss'
+        if self.config["RNN-train"].getboolean("auc_roc_cb"):
+            self.logger.log(logging.INFO, "ROC AUC Callback enabled")
+            early_stop_criterion = 'roc_auc_val'
+            callbacks.append(ROCAUCCallback(training_set_generator, dev_set_generator))
+        else:
+            self.logger.log(logging.INFO, "ROC AUC Callback disabled")
+
         if self.config["RNN-train"].getboolean("early_stop"):
             self.logger.log(logging.INFO, "Early Stop enabled")
-            callbacks.append(EarlyStopping(monitor='roc_auc_val', min_delta=1e-8, patience=5, verbose=1, mode='max'))
+            callbacks.append(
+                EarlyStopping(monitor=early_stop_criterion, min_delta=1e-8, patience=5, verbose=1, mode='max'))
         else:
             self.logger.log(logging.INFO, "Early Stop disabled")
-
         return callbacks
 
     def train(self, training_set_generator, dev_set_generator):
         model = self.setup_model()
-        with open(os.path.join(self.experiment_env.output_dir, "model.json"), "w") as f:
+        json_file = os.path.join(self.experiment_env.output_dir, "model.json")
+        with open(json_file, "w") as f:
             f.write(model.to_json())
+            self.experiment_env.add_key(**{"model_json": json_file})
+
         training_steps = self.config["RNN-train"].getint("train_steps")
         training_steps = None if training_steps == 0 else training_steps
         self.logger.log(logging.INFO, "Training step = {training_steps}")
@@ -70,15 +80,9 @@ class Trainer(Action):
                             steps_per_epoch=training_steps,
                             validation_data=dev_set_generator,
                             epochs=self.config["RNN-train"].getint("epochs"), verbose=1,
-                            callbacks=self.setup_callbacks(training_set_generator, dev_set_generator))
+                            callbacks=self.setup_callbacks(training_set_generator, dev_set_generator),
+                            class_weight={0: 1, 1: 5.88})
         final_weights = os.path.join(self.experiment_env.output_dir, "final_weights.h5")
         model.save(final_weights)
         self.logger.log(logging.INFO, "Saving weights to {final_weights}")
         self.experiment_env.add_key(**{"final_weights": final_weights})
-
-    """def saveModelToCloud(self, model, job_dir, name='model'):
-        filename = name + '.h5'
-        model.save(filename)
-        with file_io.FileIO(filename, mode='r') as inputFile:
-            with file_io.FileIO(job_dir + '/' + filename, model='w+') as outFile:
-                outFile.write(inputFile.read())"""
