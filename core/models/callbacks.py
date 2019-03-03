@@ -3,8 +3,6 @@ import os
 from keras.callbacks import Callback
 from sklearn.metrics import roc_auc_score
 
-from core.dataset.ecg import BatchGenerator
-
 
 def computer_roc(model, y, data_generator):
     roc_auc = roc_auc_score(y, model.predict_generator(data_generator, verbose=0))
@@ -36,7 +34,7 @@ class SaveModel(Callback):
 
 
 class ROCAUCCallback(Callback):
-    def __init__(self, train_generator: BatchGenerator, validation_generator: BatchGenerator):
+    def __init__(self, train_generator, validation_generator):
         print("Setting up ROC-AUC callback")
         super(ROCAUCCallback, self).__init__()
         self.train_generator = train_generator

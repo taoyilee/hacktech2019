@@ -19,9 +19,11 @@ if __name__ == "__main__":
     config.read(configuration_file)
 
     if config["RNN-train"].getboolean("resume_training"):
-        experiment_env = ExperimentEnv.setup_training(config)
-    else:
+        print("Resume training from", config["RNN-train"].get("resume_json"))
         experiment_env = ExperimentEnv.from_json(config["RNN-train"].get("resume_json"), config)
+    else:
+        print("Start a new training")
+        experiment_env = ExperimentEnv.setup_training(config)
 
     train_generator, dev_generator = Preprocessor(config, experiment_env).preprocess()
 
