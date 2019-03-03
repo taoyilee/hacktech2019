@@ -5,9 +5,11 @@ experiments_dir = experiments
 
 [nsrdb]
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
+dataset_npy_path = G:\Team Drives\CS274C Final Project\Dataset\nsrdb
 
 [mitdb]
 dataset_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
+dataset_npy_path = G:\Team Drives\CS274C Final Project\Dataset\mitdb
 excel_label = mitdb_labeled.xlsx
 
 [preprocessing]
