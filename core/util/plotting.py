@@ -77,14 +77,14 @@ class RecordPlotter:
 
     def __call__(self, record_hea):
         record_name = os.path.splitext(record_hea)[0]
-        print(f"processing record {record_name}")
+        print("processing record", record_name)
         record = wfdb.io.rdrecord(record_name)
         pdf_out = os.path.join(f'plot/{self.ecg_database}_{record.record_name}_view.pdf')
         if os.path.isfile(pdf_out):
             return
-        print(f"{record.p_signal.shape}")
-        print(f"{record.sig_name}")
-        print(f"{record.sig_len}")
+        print(record.p_signal.shape)
+        print(record.sig_name)
+        print(record.sig_len)
         samples_per_segment = int(self.signal_length_sec / (1 / record.fs))
         with PdfPages(pdf_out) as pdf:
             for starting_idx in range(0, min(self.n_pages * samples_per_segment, record.sig_len), samples_per_segment):
@@ -95,7 +95,7 @@ class RecordPlotter:
                 colors = ["red", "blue"]
                 for i in range(record.n_sig):
                     plt.subplot(record.n_sig + 1, 1, i + 1)
-                    plt.plot(time, record.p_signal[subslice, i], label=f"{record.sig_name[i]}", color=colors[i])
+                    plt.plot(time, record.p_signal[subslice, i], label=record.sig_name[i], color=colors[i])
 
                     plt.ylabel("Voltage (mV)")
                     plt.title(f"{self.ecg_database} Record #{record.record_name} {subslice.start}-{subslice.stop}")

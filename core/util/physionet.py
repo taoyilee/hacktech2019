@@ -5,7 +5,7 @@ from lxml import html
 
 
 def list_files(base_url):
-    print(f"Listing files from {base_url}")
+    print("Listing files from", base_url)
     r = requests.get(base_url)
     raw_html = html.fromstring(r.text)
     dataset_files = raw_html.xpath('//pre/a/@href')
