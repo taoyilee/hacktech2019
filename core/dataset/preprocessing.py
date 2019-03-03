@@ -12,6 +12,7 @@ class ECGDataset:
     def set_hea(self):
         for ticket in self.tickets:
             ticket.use_hea = True
+            ticket.hea_loader.config["preprocessing"]["use_hea"] = "True"
 
     def fix_path(self, mitdb_root="", nsrdb_root=""):
         for ticket in self.tickets:
